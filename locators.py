@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 class MainPanelLocators():
     LOGO = (By.CSS_SELECTOR, '[alt="logo"]')
     TO_PPK_BUTTON = (By.CLASS_NAME, 'css-1661jj0')
+    TO_PPK_BUTTON_IS_BLINKING = (By.CLASS_NAME, 'css-638ncg')
     FROM_PPK_BUTTON = (By.ID, 'read_config_from_ppk')
     SAVE_BUTTON = (By.ID, 'save_config_to_local_storage')
     RESTORE_BUTTON = (By.ID, 'restore_config_from_local_storage')

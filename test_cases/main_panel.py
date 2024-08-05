@@ -1,22 +1,28 @@
 from main_page import Page # type: ignore
 from locators import MainPanelLocators, SystemObjectsLocators # type: ignore
 from time import sleep
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
 
 # Класс для тестирования по тест-кейсу "Главная панель"
 class MainPanel(Page):
 # Общие функции
+    # Проверка на наличие элемента и орфографические ошибки
     def check_presence_and_spelling(self, locator, button_name):
-        assert self.is_element_present(*locator), \
-            f'Button "{button_name}" is not presented'
-        button_text = self.browser.find_element(*locator).text
-        assert button_text == button_name, \
-            f'Button "{button_name}" has a spelling error, button text: {button_text}'
+        try:
+            assert self.is_element_present(*locator), \
+                f'Button "{button_name}" is not presented'
+            button_text = self.browser.find_element(*locator).text
+            assert button_text == button_name, \
+                f'Button "{button_name}" has a spelling error, button text: {button_text}'
+        except StaleElementReferenceException:  # Firefox выдает ошибку из-за обновления элементов
+            assert self.is_element_present(*locator), \
+                f'Button "{button_name}" is not presented'
+            button_text = self.browser.find_element(*locator).text
+            assert button_text == button_name, \
+                f'Button "{button_name}" has a spelling error, button text: {button_text}'
 
-    def refresh_page(self):
-        self.browser.find_element(*MainPanelLocators.LOGO).click()  # Нажимаем на лого
+    # def refresh_page(self):
+    #     self.browser.find_element(*MainPanelLocators.LOGO).click()  # Нажимаем на лого
 
     def open_terminal(self):
         self.browser.find_element(*MainPanelLocators.TERMINAL_BUTTON).click()
@@ -46,8 +52,10 @@ class MainPanel(Page):
 # Проверка логотипа "Рубикон"
     def should_be_logo(self):
         assert self.is_element_present(*MainPanelLocators.LOGO), 'Logo is not presented'
-        assert self.browser.find_element(*MainPanelLocators.LOGO).is_displayed(), \
+        assert self.is_element_visible(*MainPanelLocators.LOGO), \
             'Logo is not displayed'
+        # assert self.browser.find_element(*MainPanelLocators.LOGO).is_displayed(), \
+        #     'Logo is not displayed'
     
     def does_page_refresh_when_click_logo(self):  # Обновляется ли страница при клике на лого?
         self.close_expanded_tabs()  # Закрыть все влкадки
@@ -100,8 +108,9 @@ class MainPanel(Page):
 
     def online_mark_color_should_be_green(self):
         color = self.browser.find_element(*MainPanelLocators.ONLINE_MARK).value_of_css_property('color')
-        assert color == 'rgba(0, 230, 118, 1)', \
-            f'Connection status color is not green: "rgba(0, 230, 118, 1)", color: {color}'
+        # sleep(100)
+        assert '0, 230, 118' in color, \
+            f'Connection status color is not green: "rgb(0, 230, 118)", color: {color}'
     
     def should_be_offline_mark(self):
         sleep(2)  # Ожидание пока может подгрузиться online статус
@@ -128,6 +137,10 @@ class MainPanel(Page):
         assert self.is_element_clickable(*MainPanelLocators.TO_PPK_BUTTON), \
             'The button "В ППК" is not clickable'
         self.browser.find_element(*MainPanelLocators.TO_PPK_BUTTON).click()  # Начать запись В ППК
+        assert self.is_element_present(*MainPanelLocators.TO_PPK_BUTTON_IS_BLINKING), \
+            'The button "В ППК" does not blink'
+        sleep(2)
+
 
     def check_record(self, module_num=0):
         assert self.is_element_present(*SystemObjectsLocators.RECORD_START[module_num]), \

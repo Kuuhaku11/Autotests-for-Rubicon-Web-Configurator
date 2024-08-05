@@ -24,9 +24,9 @@ class Page():
             return False
         return True
 
-    def is_element_clickable(self, how, what, timeout=3):
+    def is_element_visible(self, how, what, timeout=3):
         try:
-            WebDriverWait(self.browser, timeout).until(EC.element_to_be_clickable((how, what)))
+            WebDriverWait(self.browser, timeout).until(EC.visibility_of_all_elements_located((how, what)))
         except TimeoutException:
             return False
         return True
