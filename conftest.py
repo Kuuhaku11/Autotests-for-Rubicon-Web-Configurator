@@ -13,9 +13,10 @@ def browser(request):
     browser_name = request.config.getoption('browser_name')
     if browser_name == 'chrome':
         print('\nStart chrome for test...')
-        # options = Options()
-        # browser = webdriver.Chrome(options=options)
-        browser = webdriver.Chrome()
+        options = Options()
+        # options.add_argument('headless=new')
+        browser = webdriver.Chrome(options=options)
+        # browser = webdriver.Chrome()
     elif browser_name == 'firefox':
         print('\nStart firefox for test...')
         browser = webdriver.Firefox()
