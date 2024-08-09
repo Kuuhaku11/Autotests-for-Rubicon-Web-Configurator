@@ -16,7 +16,7 @@ class Page():
         except NoSuchElementException:
             return False
         return True
-    
+
     def is_element_clickable(self, how, what, timeout=3):
         try:
             WebDriverWait(self.browser, timeout).until(EC.element_to_be_clickable((how, what)))
