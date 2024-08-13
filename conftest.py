@@ -8,9 +8,10 @@ def pytest_addoption(parser):
     parser.addoption('--browser_name', action='store', default='chrome',
                      help='Choose browser: chrome или firefox')
 
+
 @pytest.fixture(scope='function')
-# def browser(request, browser_name):  # Для запуска тестов в двух браузерах
-def browser(request):
+# def browser(request, browser_name):  # Расскоментировать для запуска тестов в двух браузерах
+def browser(request):                  # И закомментировать эту и следующую строчку
     browser_name = request.config.getoption('browser_name')
     if browser_name == 'chrome':
         print('\nStart chrome for test...')
