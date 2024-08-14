@@ -94,11 +94,23 @@ class AreaSettingsLocators():
     def EXTINGUISHING(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_extPresent')
     def GAS_OUTPUT_SIGNAL(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_needGasOk')
     def MUTUALLY_EXCLUSIVE_SR(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_interlock')
-    MUTUALLY_EXCLUSIVE_SR_ARROW = (By.CSS_SELECTOR, f'input[value="нет"] + div')
+    def MUTUALLY_EXCLUSIVE_SR_ARROW(area_num): return (By.CSS_SELECTOR, 
+        f'#id_1_Box_Module_1_Area_{area_num}_interlock + div')
     def EXTINGUISHING_BY_MFA(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_extOnMCP')
     def FORWARD_IN_RING(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_sendOnRing')
     def RETRY_DELAY(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_reQueryDelay')
     def LAUNCH_ALGORITHM(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_algorithm')
-    LAUNCH_ALGORITHM_ARROW = (By.CSS_SELECTOR, f'input[value="B (перезапрос)"] + div')
+    def LAUNCH_ALGORITHM_ARROW(area_num): return (By.CSS_SELECTOR, 
+        f'#id_1_Box_Module_1_Area_{area_num}_algorithm + div')
     def RESET_DELAY(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_resetDelay')
     CHECKBOX_CHECKED = (By.CSS_SELECTOR, f'.Mui-checked > #')  # + {checkbox id}
+
+
+class InputLinksSettingsLocators():
+    def UNIT_ID(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_unitID')
+    def PARENT_AREA(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_parent area')
+    def DISABLE(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_ignore')
+    def COMMAND(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_flavour')
+    def COMMAND_ARROW(num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_1_InputLink_{num}_flavour + div')
+    def CHANNEL(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_channel')
+    def FIX(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_fixed')

@@ -1,6 +1,9 @@
 from main_page import Page # type: ignore
-from locators import MainPanelLocators, SystemObjectsLocators, AreaSettingsLocators # type: ignore
+from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLocators,  # type: ignore
+    InputLinksSettingsLocators)
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.action_chains import ActionChains
 from time import sleep
 
 
@@ -281,7 +284,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
 
 # Полной перезаписи настроек ранее добавленных объектов
-    def rewrite_area_settings(self, areas):
+    def rewrite_areas_settings(self, areas):
         print(f'Rewrite settings in {areas} areas...')
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
         for area_num in range(1, areas):
@@ -296,20 +299,41 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                       ).send_keys(123456)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.GAS_OUTPUT_SIGNAL(area_num)).click()
-            self.browser.find_element(*AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW).click()
+            self.browser.find_element(*AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num)).click()
             self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(2)).click()
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.FORWARD_IN_RING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.RETRY_DELAY(area_num)
                                       ).send_keys(123456)
-            self.browser.find_element(*AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW).click()
+            self.browser.find_element(*AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num)).click()
             self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(3)).click()
             self.browser.find_element(*AreaSettingsLocators.RESET_DELAY(area_num)
                                       ).send_keys(123456)
+    
+    def rewrite_inputlinks_settings(self, inlinks, areas):
+        print(f'Rewrite settings in {inlinks} inputlinks...')
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        action = ActionChains(self.browser)
+        for num in range(1, inlinks + 1):
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
+            link = self.browser.find_element(*InputLinksSettingsLocators.UNIT_ID(num))
+            device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
+            self.browser.execute_script("arguments[0].scrollIntoView(true);", device)  # Прокрутка страницы
+            action.drag_and_drop(device, link).perform()  # Перемещение устройства в ТС вход
+            self.browser.find_element(*InputLinksSettingsLocators.PARENT_AREA(num)).click()
+            self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas)).click()
+            self.browser.find_element(*InputLinksSettingsLocators.DISABLE(num)).click()
+            if num % 6 == 5:
+                self.browser.find_element(*InputLinksSettingsLocators.COMMAND_ARROW(num)).click()
+                self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(17)).click()
+            if num % 6 == 0:
+                self.browser.find_element(*InputLinksSettingsLocators.CHANNEL(num)).send_keys(1234)
+                self.browser.find_element(*InputLinksSettingsLocators.FIX(num)).click()
 
 
 # Проверка полной перезаписи настроек
-    def should_be_area_settings(self, areas):
+    def should_be_areas_settings(self, areas):
         print(f'Check settings in {areas} areas...')
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
         for area_num in range(1, areas):
@@ -324,11 +348,11 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 f'Checkbox "отключен" in area {area_num} is unchecked, expected to be checked'
             value = self.browser.find_element(
                 *AreaSettingsLocators.DELAY_IN_EVACUATION(area_num)).get_attribute('value')
-            assert f'1800' == value, f'"задержка эвакуации" setting in area {area_num} '\
+            assert '1800' == value, f'"задержка эвакуации" setting in area {area_num} '\
                 f'does not match, expected "1800", value received "{value}"'
             value = self.browser.find_element(
                 *AreaSettingsLocators.EXTINGUISHING_START_TIME(area_num)).get_attribute('value')
-            assert f'255' == value, f'"время пуска тушения" setting in area {area_num} '\
+            assert '255' == value, f'"время пуска тушения" setting in area {area_num} '\
                 f'does not match, expected "255", value received "{value}"'
             assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
                 AreaSettingsLocators.CHECKBOX_CHECKED[1] + AreaSettingsLocators.EXTINGUISHING(area_num)[1]), \
@@ -338,7 +362,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 f'Checkbox "требуется сигнал выхода газа" in area {area_num} is unchecked, expected to be checked'
             value = self.browser.find_element(
                 *AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR(area_num)).get_attribute('value')
-            assert f'интерлок' == value, f'"взаимно исключает ДУ" setting in area {area_num} '\
+            assert 'интерлок' == value, f'"взаимно исключает ДУ" setting in area {area_num} '\
                 f'does not match, expected "интерлок", value received "{value}"'
             assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
                 AreaSettingsLocators.CHECKBOX_CHECKED[1] + 
@@ -349,17 +373,50 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 f'Checkbox "пересылать по кольцу" in area {area_num} is unchecked, expected to be checked'
             value = self.browser.find_element(
                 *AreaSettingsLocators.RETRY_DELAY(area_num)).get_attribute('value')
-            assert f'16383' == value, f'"задержка перезапроса" setting in area {area_num} '\
+            assert '16383' == value, f'"задержка перезапроса" setting in area {area_num} '\
                 f'does not match, expected "16383", value received "{value}"'
             value = self.browser.find_element(
                 *AreaSettingsLocators.LAUNCH_ALGORITHM(area_num)).get_attribute('value')
-            assert f'C1 (две сработки)' == value, f'"алгоритм ЗКПС" setting in area {area_num} '\
+            assert 'C1 (две сработки)' == value, f'"алгоритм ЗКПС" setting in area {area_num} '\
                 f'does not match, expected "C1 (две сработки)", value received "{value}"'
             value = self.browser.find_element(
                 *AreaSettingsLocators.RESET_DELAY(area_num)).get_attribute('value')
-            assert f'16383' == value, f'"задержка сброса" setting in area {area_num} '\
+            assert '16383' == value, f'"задержка сброса" setting in area {area_num} '\
                 f'does not match, expected "16383", value received "{value}"'
 
+    def should_be_inputlinks_settings(self, inlinks, areas):
+        print(f'Check settings in {inlinks} inputlinks...')
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        for num in range(1, inlinks + 1):
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
+            value = self.browser.find_element(
+                *InputLinksSettingsLocators.UNIT_ID(num)).get_attribute('value')
+            device_name = self.browser.find_element(
+                *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)).text
+            assert device_name == value, f'Value in "ссылка(ИД)" in inputlink {num} does not match, '\
+                f'expected "{device_name}", value received "{value}"'
+            value = self.browser.find_element(
+                *InputLinksSettingsLocators.PARENT_AREA(num)).get_attribute('value')
+            assert f'#{areas} Зона Пожаротушения ' == value, \
+                f'Value in "входит в область" in inputlink {num} does not match, '\
+                f'expected "#{areas} Зона Пожаротушения ", value received "{value}"'
+            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
+                AreaSettingsLocators.CHECKBOX_CHECKED[1] + InputLinksSettingsLocators.DISABLE(num)[1]), \
+                f'Checkbox "отключен" in inputlink {num} is unchecked, expected to be checked'
+            if num % 6 == 5:
+                value = self.browser.find_element(
+                    *InputLinksSettingsLocators.COMMAND(num)).get_attribute('value')
+                assert 'СДУ - газ пошел' == value, f'"команда" setting in inputlink {num} '\
+                    f'does not match, expected "СДУ - газ пошел", value received "{value}"'
+            if num % 6 == 0:
+                value = self.browser.find_element(
+                    *InputLinksSettingsLocators.CHANNEL(num)).get_attribute('value')
+                assert '14' == value, f'"канал" setting in inputlink {num} '\
+                    f'does not match, expected "14", value received "{value}"'
+                assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
+                    AreaSettingsLocators.CHECKBOX_CHECKED[1] + InputLinksSettingsLocators.FIX(num)[1]), \
+                    f'Checkbox "фиксировать" in inputlink {num} is unchecked, expected to be checked'
 
     
 # Очистка ППК от объектов
