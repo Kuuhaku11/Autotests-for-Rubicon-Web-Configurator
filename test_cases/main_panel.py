@@ -1,6 +1,6 @@
 from main_page import Page # type: ignore
 from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLocators,  # type: ignore
-    InputLinksSettingsLocators)
+    InputLinkSettingsLocators, OutputLinkSettingsLocators)
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -198,7 +198,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             f'Unload for all ppkr has not finished or there is a spelling error'
 
 
-# Проверка полной записи в ППК
+# Полная запись в ППК
     def add_areas(self, areas):
         print(f'Creating {areas} areas...')
         for _ in range(areas):  # Создать Зоны пожаротушения
@@ -255,7 +255,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             sleep(0.15)  # f
 
 
-# Полная выгрузка из ППК
+# Проверка полной выгрузки из ППК
     def check_number_of_areas(self, areas):
         print(f'Checking number of areas...')
         assert str(areas) == self.browser.find_element(*SystemObjectsLocators.NUMBER_OF_AREAS).text, \
@@ -283,15 +283,18 @@ class MainPanel(Page):  # Класс для тестирования по тес
             f'Number of addressable_devices on {AL} loop is not equal {addr_devs}'
 
 
-# Полной перезаписи настроек ранее добавленных объектов
+# Полная перезапись настроек ранее добавленных объектов
+    def select_in_list(self, locator, item):  # Выбрать пункт в настройке с выпадающим списком
+        self.browser.find_element(*locator).click()
+        self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(item)).click()
+
     def rewrite_areas_settings(self, areas):
         print(f'Rewrite settings in {areas} areas...')
-        self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
-        for area_num in range(1, areas):
+        self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
+        for area_num in range(1, areas):  # У каждой Зоны Пожаротушения изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(area_num)).click()
             self.browser.execute_script("window.scrollBy(0, -500);")  # Прокрутка страницы
-            self.browser.find_element(*AreaSettingsLocators.ENTERS_THE_AREA(area_num)).click()
-            self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas - 1)).click()
+            self.select_in_list(AreaSettingsLocators.ENTERS_THE_AREA(area_num), areas - 1)
             self.browser.find_element(*AreaSettingsLocators.DISABLE(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.DELAY_IN_EVACUATION(area_num)
                                       ).send_keys(123456)
@@ -299,124 +302,204 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                       ).send_keys(123456)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.GAS_OUTPUT_SIGNAL(area_num)).click()
-            self.browser.find_element(*AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num)).click()
-            self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(2)).click()
+            self.select_in_list(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num), 2)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.FORWARD_IN_RING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.RETRY_DELAY(area_num)
                                       ).send_keys(123456)
-            self.browser.find_element(*AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num)).click()
-            self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(3)).click()
+            self.select_in_list(AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num), 3)
             self.browser.find_element(*AreaSettingsLocators.RESET_DELAY(area_num)
                                       ).send_keys(123456)
     
     def rewrite_inputlinks_settings(self, inlinks, areas):
         print(f'Rewrite settings in {inlinks} inputlinks...')
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
-        action = ActionChains(self.browser)
-        for num in range(1, inlinks + 1):
+        for num in range(1, inlinks + 1):  # У каждого ТС входа изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
-            link = self.browser.find_element(*InputLinksSettingsLocators.UNIT_ID(num))
+            link = self.browser.find_element(*InputLinkSettingsLocators.UNIT_ID(num))
             device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
             self.browser.execute_script("arguments[0].scrollIntoView(true);", device)  # Прокрутка страницы
-            action.drag_and_drop(device, link).perform()  # Перемещение устройства в ТС вход
-            self.browser.find_element(*InputLinksSettingsLocators.PARENT_AREA(num)).click()
+            ActionChains(self.browser).drag_and_drop(device, link).perform()  # Перемещение АУ
+            self.select_in_list(InputLinkSettingsLocators.PARENT_AREA(num), areas)
+            self.browser.find_element(*InputLinkSettingsLocators.DISABLE(num)).click()
+            if num % 6 == 5:  # Тип ТС входа - вход команд
+                self.select_in_list(InputLinkSettingsLocators.COMMAND_ARROW(num), 17)
+            if num % 6 == 0:  # Тип ТС входа - вход технический
+                self.browser.find_element(*InputLinkSettingsLocators.CHANNEL(num)).send_keys(1234)
+                self.browser.find_element(*InputLinkSettingsLocators.FIX(num)).click()
+      
+    def rewrite_outputlinks_settings(self, outlinks, areas):
+        print(f'Rewrite settings in {outlinks} outputlinks...')
+        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
+        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть БИС-Мы
+        BIS_num = 1
+        for num in range(1, outlinks + 1):
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
+            link = self.browser.find_element(*OutputLinkSettingsLocators.UNIT_ID(num))
+            if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
+            BIS_m = self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(BIS_num))
+            self.browser.execute_script("arguments[0].scrollIntoView(true);", BIS_m)  # Прокрутка страницы
+            ActionChains(self.browser).drag_and_drop(BIS_m, link).perform()  # Перемещение БИС_М
+            BIS_num += 1
+            self.browser.find_element(*OutputLinkSettingsLocators.PARENT_AREA(num)).click()
             self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas)).click()
-            self.browser.find_element(*InputLinksSettingsLocators.DISABLE(num)).click()
-            if num % 6 == 5:
-                self.browser.find_element(*InputLinksSettingsLocators.COMMAND_ARROW(num)).click()
-                self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(17)).click()
-            if num % 6 == 0:
-                self.browser.find_element(*InputLinksSettingsLocators.CHANNEL(num)).send_keys(1234)
-                self.browser.find_element(*InputLinksSettingsLocators.FIX(num)).click()
+            self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(num)).click()
+            if num % 3 == 0:  # Тип ТС выхода - выход на реле
+                self.browser.find_element(*OutputLinkSettingsLocators.TURN_ON_DELAY(num)).send_keys(123456)
+                self.browser.find_element(*OutputLinkSettingsLocators.TURN_OFF_DELAY(num)).send_keys(123456)
+                self.browser.find_element(*OutputLinkSettingsLocators.NO_STOP(num)).click()
+                self.browser.find_element(*OutputLinkSettingsLocators.NO_RESTART_DELAY_ON(num)).click()
+                self.browser.find_element(*OutputLinkSettingsLocators.NO_RESTART_DELAY_OFF(num)).click()
+                self.browser.find_element(*OutputLinkSettingsLocators.SINGLE_PULSE(num)).click()
+                self.select_in_list(OutputLinkSettingsLocators.ON_FIRE1_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_FIRE2_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_FAULT_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_REPAIR_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_EVACUATION_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_EXTINGUICHING_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_AFTER_EXTINGUICHING_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_EXTINGUICHING_FAILED_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_AUTO_OFF_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_RESET_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_DOOR_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_BLOCKED_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_EVACUATION_PAUSE_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_DOOR_PAUSE_ARROW(num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.ON_CANCELLED_ARROW(num), 3)
+                for tech_num in range(15):
+                    self.select_in_list(OutputLinkSettingsLocators.ON_TECH_ARROW(num, tech_num), 3)
+                self.select_in_list(OutputLinkSettingsLocators.AND_OR_ARROW(num), 2)
 
 
-# Проверка полной перезаписи настроек
+# Проверка полной перезаписи настроек      
+    def value_check(self, locator, expected_value, set_name, object_name):  # Проверка значения настройки
+        value = self.browser.find_element(*locator).get_attribute('value')
+        assert expected_value == value, f'Value in "{set_name}" in {object_name} does not match, ' \
+                                        f'expected "{expected_value}", value received "{value}"'
+
+    def checkbox_check(self, locator, checkbox_name, object_name):  # Проверка, что чекбокс включен
+        assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
+            AreaSettingsLocators.CHECKBOX_CHECKED[1] + locator[1]), \
+            f'Checkbox "{checkbox_name}" in {object_name} is unchecked, expected to be checked'
+
     def should_be_areas_settings(self, areas):
         print(f'Check settings in {areas} areas...')
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
-        for area_num in range(1, areas):
+        for area_num in range(1, areas):  # Проверка соответствия настроек в каждой Зоне Пожаротушения
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(area_num)).click()
-            value = self.browser.find_element(
-                *AreaSettingsLocators.ENTERS_THE_AREA(area_num)).get_attribute('value')
-            assert f'#{areas} Зона Пожаротушения ' == value, \
-                f'"входит в область" setting in area {area_num} does not match, expected ' \
-                f'"#{areas} Зона Пожаротушения ", value received "{value}"'
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + AreaSettingsLocators.DISABLE(area_num)[1]), \
-                f'Checkbox "отключен" in area {area_num} is unchecked, expected to be checked'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.DELAY_IN_EVACUATION(area_num)).get_attribute('value')
-            assert '1800' == value, f'"задержка эвакуации" setting in area {area_num} '\
-                f'does not match, expected "1800", value received "{value}"'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.EXTINGUISHING_START_TIME(area_num)).get_attribute('value')
-            assert '255' == value, f'"время пуска тушения" setting in area {area_num} '\
-                f'does not match, expected "255", value received "{value}"'
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + AreaSettingsLocators.EXTINGUISHING(area_num)[1]), \
-                f'Checkbox "есть пожаротушение" in area {area_num} is unchecked, expected to be checked'     
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + AreaSettingsLocators.GAS_OUTPUT_SIGNAL(area_num)[1]), \
-                f'Checkbox "требуется сигнал выхода газа" in area {area_num} is unchecked, expected to be checked'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR(area_num)).get_attribute('value')
-            assert 'интерлок' == value, f'"взаимно исключает ДУ" setting in area {area_num} '\
-                f'does not match, expected "интерлок", value received "{value}"'
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + 
-                AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num)[1]), \
-                f'Checkbox "тушение по ИПР" in area {area_num} is unchecked, expected to be checked'
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + AreaSettingsLocators.FORWARD_IN_RING(area_num)[1]), \
-                f'Checkbox "пересылать по кольцу" in area {area_num} is unchecked, expected to be checked'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.RETRY_DELAY(area_num)).get_attribute('value')
-            assert '16383' == value, f'"задержка перезапроса" setting in area {area_num} '\
-                f'does not match, expected "16383", value received "{value}"'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.LAUNCH_ALGORITHM(area_num)).get_attribute('value')
-            assert 'C1 (две сработки)' == value, f'"алгоритм ЗКПС" setting in area {area_num} '\
-                f'does not match, expected "C1 (две сработки)", value received "{value}"'
-            value = self.browser.find_element(
-                *AreaSettingsLocators.RESET_DELAY(area_num)).get_attribute('value')
-            assert '16383' == value, f'"задержка сброса" setting in area {area_num} '\
-                f'does not match, expected "16383", value received "{value}"'
+            self.value_check(AreaSettingsLocators.ENTERS_THE_AREA(area_num),
+                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'area {area_num}')
+            self.checkbox_check(AreaSettingsLocators.DISABLE(area_num), 'отключен', f'area {area_num}')
+            self.value_check(AreaSettingsLocators.DELAY_IN_EVACUATION(area_num),
+                            '1800', 'задержка эвакуации', f'area {area_num}')
+            self.value_check(AreaSettingsLocators.EXTINGUISHING_START_TIME(area_num),
+                            '255', 'время пуска тушения', f'area {area_num}')
+            self.checkbox_check(AreaSettingsLocators.EXTINGUISHING(area_num), 
+                                'есть пожаротушение', f'area {area_num}')
+            self.checkbox_check(AreaSettingsLocators.GAS_OUTPUT_SIGNAL(area_num), 
+                                'требуется сигнал выхода газа', f'area {area_num}')
+            self.value_check(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR(area_num),
+                            'интерлок', 'взаимно исключает ДУ', f'area {area_num}')
+            self.checkbox_check(AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num), 
+                                'тушение по ИПР', f'area {area_num}')
+            self.checkbox_check(AreaSettingsLocators.FORWARD_IN_RING(area_num), 
+                                'пересылать по кольцу', f'area {area_num}')
+            self.value_check(AreaSettingsLocators.RETRY_DELAY(area_num),
+                            '16383', 'задержка перезапроса', f'area {area_num}')
+            self.value_check(AreaSettingsLocators.LAUNCH_ALGORITHM(area_num),
+                            'C1 (две сработки)', 'алгоритм ЗКПС', f'area {area_num}')                
+            self.value_check(AreaSettingsLocators.RESET_DELAY(area_num),
+                            '16383', 'задержка сброса', f'area {area_num}') 
 
     def should_be_inputlinks_settings(self, inlinks, areas):
         print(f'Check settings in {inlinks} inputlinks...')
         self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
-        for num in range(1, inlinks + 1):
+        for num in range(1, inlinks + 1):  # Проверка соответствия настроек в каждой ТС входе
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
-            value = self.browser.find_element(
-                *InputLinksSettingsLocators.UNIT_ID(num)).get_attribute('value')
             device_name = self.browser.find_element(
                 *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)).text
-            assert device_name == value, f'Value in "ссылка(ИД)" in inputlink {num} does not match, '\
-                f'expected "{device_name}", value received "{value}"'
-            value = self.browser.find_element(
-                *InputLinksSettingsLocators.PARENT_AREA(num)).get_attribute('value')
-            assert f'#{areas} Зона Пожаротушения ' == value, \
-                f'Value in "входит в область" in inputlink {num} does not match, '\
-                f'expected "#{areas} Зона Пожаротушения ", value received "{value}"'
-            assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                AreaSettingsLocators.CHECKBOX_CHECKED[1] + InputLinksSettingsLocators.DISABLE(num)[1]), \
-                f'Checkbox "отключен" in inputlink {num} is unchecked, expected to be checked'
-            if num % 6 == 5:
-                value = self.browser.find_element(
-                    *InputLinksSettingsLocators.COMMAND(num)).get_attribute('value')
-                assert 'СДУ - газ пошел' == value, f'"команда" setting in inputlink {num} '\
-                    f'does not match, expected "СДУ - газ пошел", value received "{value}"'
-            if num % 6 == 0:
-                value = self.browser.find_element(
-                    *InputLinksSettingsLocators.CHANNEL(num)).get_attribute('value')
-                assert '14' == value, f'"канал" setting in inputlink {num} '\
-                    f'does not match, expected "14", value received "{value}"'
-                assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                    AreaSettingsLocators.CHECKBOX_CHECKED[1] + InputLinksSettingsLocators.FIX(num)[1]), \
-                    f'Checkbox "фиксировать" in inputlink {num} is unchecked, expected to be checked'
+            self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
+                            device_name, 'ссылка(ИД)', f'inputlink {num}') 
+            self.value_check(InputLinkSettingsLocators.PARENT_AREA(num),
+                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'inputlink {num}')
+            self.checkbox_check(InputLinkSettingsLocators.DISABLE(num), 
+                                'отключен', f'inputlink {num}')
+            if num % 6 == 5:  # Тип ТС входа - вход команд
+                self.value_check(InputLinkSettingsLocators.COMMAND(num),
+                                f'СДУ - газ пошел', 'команда', f'inputlink {num}')
+            if num % 6 == 0:  # Тип ТС входа - вход технический
+                self.value_check(InputLinkSettingsLocators.CHANNEL(num),
+                                f'14', 'канал', f'inputlink {num}')
+                self.checkbox_check(InputLinkSettingsLocators.FIX(num), 'фиксировать', f'inputlink {num}')
+
+    def should_be_outputlinks_settings(self, outlinks, areas):
+        print(f'Check settings in {outlinks} outputlinks...')
+        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        BIS_num = 1
+        for num in range(1, outlinks + 1):  # Проверка соответствия настроек в каждой ТС выходе
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
+            if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
+            BIS_name = self.browser.find_element(
+                *SystemObjectsLocators.RS_485_ITEMS(BIS_num)).text
+            BIS_num += 1
+            self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
+                            BIS_name, 'ссылка(ИД)', f'outputlink {num}')
+            self.value_check(OutputLinkSettingsLocators.PARENT_AREA(num), 
+                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'outputlink {num}')
+            self.checkbox_check(OutputLinkSettingsLocators.DISABLE(num), 'отключен', f'outputlink {num}')
+            if num % 3 == 0:  # Тип ТС выхода - выход на реле
+                self.value_check(OutputLinkSettingsLocators.TURN_ON_DELAY(num),
+                                '16383', 'задержка включения', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.TURN_OFF_DELAY(num),
+                                '16383', 'задержка выключения', f'outputlink {num}')              
+                self.checkbox_check(OutputLinkSettingsLocators.NO_STOP(num),
+                                    'продолжать если НЕ условие', f'outputlink {num}')
+                self.checkbox_check(OutputLinkSettingsLocators.NO_RESTART_DELAY_ON(num),
+                                    'продолжать задержку включения при повторном', f'outputlink {num}')
+                self.checkbox_check(OutputLinkSettingsLocators.NO_RESTART_DELAY_OFF(num),
+                                    'продолжать задержку вЫключения при повторном', f'outputlink {num}')
+                self.checkbox_check(OutputLinkSettingsLocators.SINGLE_PULSE(num),
+                                    'однократный импульс', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
+                                f'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE2(num), 
+                                f'если есть', 'на ПОЖАР (пожар-2)', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
+                                f'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FAULT(num), 
+                                f'если есть', 'на неисправность', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_REPAIR(num), 
+                                f'если есть', "на 'в ремонте'", f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EVACUATION(num), 
+                                f'если есть', 'на газ-уходи', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING(num), 
+                                f'если есть', 'на пуск тушения', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_AFTER_EXTINGUICHING(num), 
+                                f'если есть', 'на тушение закончено', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING_FAILED(num), 
+                                f'если есть', 'на тушение закончено неудачно', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_AUTO_OFF(num), 
+                                f'если есть', 'на авт. откл', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_RESET(num), 
+                                f'если есть', 'на сброс', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_DOOR(num), 
+                                f'если есть', 'на дверь открыта', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_BLOCKED(num), 
+                                f'если есть', 'на блокировка', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EVACUATION_PAUSE(num), 
+                                f'если есть', 'на останов', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_DOOR_PAUSE(num), 
+                                f'если есть', 'на останов по двери', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.ON_CANCELLED(num), 
+                                f'если есть', 'на отмену пуска тушения', f'outputlink {num}')
+                for tech_num in range(15):
+                    self.value_check(OutputLinkSettingsLocators.ON_TECH(num, tech_num), 
+                                    f'если есть', f'на технический сигнал {tech_num}', f'outputlink {num}')
+                self.value_check(OutputLinkSettingsLocators.AND_OR(num), 
+                                f'по И', 'И/или', f'outputlink {num}')                             
 
     
 # Очистка ППК от объектов

@@ -88,29 +88,94 @@ class SystemObjectsLocators():
 
 class AreaSettingsLocators():
     def ENTERS_THE_AREA(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_parent area')
-    def DISABLE(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_ignore')
-    def DELAY_IN_EVACUATION(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_delay1')
-    def EXTINGUISHING_START_TIME(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_delay2')
-    def EXTINGUISHING(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_extPresent')
-    def GAS_OUTPUT_SIGNAL(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_needGasOk')
-    def MUTUALLY_EXCLUSIVE_SR(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_interlock')
-    def MUTUALLY_EXCLUSIVE_SR_ARROW(area_num): return (By.CSS_SELECTOR, 
-        f'#id_1_Box_Module_1_Area_{area_num}_interlock + div')
-    def EXTINGUISHING_BY_MFA(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_extOnMCP')
-    def FORWARD_IN_RING(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_sendOnRing')
-    def RETRY_DELAY(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_reQueryDelay')
-    def LAUNCH_ALGORITHM(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_algorithm')
-    def LAUNCH_ALGORITHM_ARROW(area_num): return (By.CSS_SELECTOR, 
-        f'#id_1_Box_Module_1_Area_{area_num}_algorithm + div')
-    def RESET_DELAY(area_num): return (By.ID, f'id_1_Box_Module_1_Area_{area_num}_resetDelay')
+    def DISABLE(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_ignore')
+    def DELAY_IN_EVACUATION(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_delay1')
+    def EXTINGUISHING_START_TIME(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_delay2')
+    def EXTINGUISHING(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_extPresent')
+    def GAS_OUTPUT_SIGNAL(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_needGasOk')
+    def MUTUALLY_EXCLUSIVE_SR(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_interlock')
+    def MUTUALLY_EXCLUSIVE_SR_ARROW(num): return (By.CSS_SELECTOR, 
+        f'#id_1_Box_Module_1_Area_{num}_interlock + div')
+    def EXTINGUISHING_BY_MFA(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_extOnMCP')
+    def FORWARD_IN_RING(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_sendOnRing')
+    def RETRY_DELAY(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_reQueryDelay')
+    def LAUNCH_ALGORITHM(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_algorithm')
+    def LAUNCH_ALGORITHM_ARROW(num): return (By.CSS_SELECTOR, 
+        f'#id_1_Box_Module_1_Area_{num}_algorithm + div')
+    def RESET_DELAY(num): return (By.ID, f'id_1_Box_Module_1_Area_{num}_resetDelay')
     CHECKBOX_CHECKED = (By.CSS_SELECTOR, f'.Mui-checked > #')  # + {checkbox id}
 
 
-class InputLinksSettingsLocators():
+class InputLinkSettingsLocators():
     def UNIT_ID(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_unitID')
-    def PARENT_AREA(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_parent area')
-    def DISABLE(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_ignore')
-    def COMMAND(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_flavour')
+    def PARENT_AREA(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_parent area')
+    def DISABLE(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_ignore')
+    def COMMAND(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_flavour')
     def COMMAND_ARROW(num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_1_InputLink_{num}_flavour + div')
-    def CHANNEL(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_channel')
-    def FIX(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_fixed')
+    def CHANNEL(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_channel')
+    def FIX(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_fixed')
+
+
+class OutputLinkSettingsLocators():
+    def UNIT_ID(outlink_num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{outlink_num}_unitID')
+    def PARENT_AREA(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_parent area')
+    def DISABLE(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_ignore')
+    def TURN_ON_DELAY(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_delayOn')
+    def TURN_OFF_DELAY(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_delayOff')
+    def NO_STOP(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_noStopOnOff')
+    def NO_RESTART_DELAY_ON(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_noRestartDelayOn')
+    def NO_RESTART_DELAY_OFF(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_noRestartDelayOff')
+    def SINGLE_PULSE(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_singlePulse')
+
+    # Настройки реагирования выхода на реле
+    def ON_FIRE1(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onFire1')
+    def ON_FIRE1_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onFire1 + div')
+    def ON_FIRE2(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onFire2')
+    def ON_FIRE2_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onFire2 + div')
+    def ON_FAULT(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onFault')
+    def ON_FAULT_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onFault + div')
+    def ON_REPAIR(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onRepair')
+    def ON_REPAIR_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onRepair + div')
+    def ON_EVACUATION(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onEvacuation')
+    def ON_EVACUATION_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onEvacuation + div')
+    def ON_EXTINGUICHING(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onExtinguiching')
+    def ON_EXTINGUICHING_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onExtinguiching + div')
+    def ON_AFTER_EXTINGUICHING(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onAfterExtinguishing')
+    def ON_AFTER_EXTINGUICHING_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onAfterExtinguishing + div')
+    def ON_EXTINGUICHING_FAILED(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onExtinguishingFailed')
+    def ON_EXTINGUICHING_FAILED_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onExtinguishingFailed + div')
+    def ON_AUTO_OFF(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onAutoOff')
+    def ON_AUTO_OFF_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onAutoOff + div')
+    def ON_RESET(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onReset')
+    def ON_RESET_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onReset + div')
+    def ON_DOOR(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onDoor')
+    def ON_DOOR_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onDoor + div')
+    def ON_BLOCKED(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onBlocked')
+    def ON_BLOCKED_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onBlocked + div')
+    def ON_EVACUATION_PAUSE(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onEvacuationPause')
+    def ON_EVACUATION_PAUSE_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onEvacuationPause + div')
+    def ON_DOOR_PAUSE(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onDoorPause')
+    def ON_DOOR_PAUSE_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onDoorPause + div')
+    def ON_CANCELLED(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onCancelled')
+    def ON_CANCELLED_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onCancelled + div')
+    def ON_TECH(num, tech_num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_onTech{tech_num}')
+    def ON_TECH_ARROW(num, tech_num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_onTech{tech_num} + div')
+    def AND_OR(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_andOr')
+    def AND_OR_ARROW(num): return (By.CSS_SELECTOR,
+        f'#id_1_Box_Module_1_OutputLink_{num}_andOr + div')
