@@ -110,8 +110,10 @@ class InputLinkSettingsLocators():
     def UNIT_ID(inlink_num): return (By.ID, f'id_1_Box_Module_1_InputLink_{inlink_num}_unitID')
     def PARENT_AREA(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_parent area')
     def DISABLE(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_ignore')
+
     def COMMAND(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_flavour')
     def COMMAND_ARROW(num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_1_InputLink_{num}_flavour + div')
+
     def CHANNEL(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_channel')
     def FIX(num): return (By.ID, f'id_1_Box_Module_1_InputLink_{num}_fixed')
 
@@ -120,6 +122,7 @@ class OutputLinkSettingsLocators():
     def UNIT_ID(outlink_num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{outlink_num}_unitID')
     def PARENT_AREA(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_parent area')
     def DISABLE(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_ignore')
+
     def TURN_ON_DELAY(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_delayOn')
     def TURN_OFF_DELAY(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_delayOff')
     def NO_STOP(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_noStopOnOff')
@@ -179,3 +182,28 @@ class OutputLinkSettingsLocators():
     def AND_OR(num): return (By.ID, f'id_1_Box_Module_1_OutputLink_{num}_andOr')
     def AND_OR_ARROW(num): return (By.CSS_SELECTOR,
         f'#id_1_Box_Module_1_OutputLink_{num}_andOr + div')
+    
+
+class RS_485_SettingsLocators():
+    def DISABLE(BIS_M_num): return (By.ID, f'id_1_Box_Module_2_SK_{BIS_M_num}_ignore')
+    def BRIGHTNESS(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_brightness')
+    def TIMEOUT(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_keyTimeout')
+    def NO_SOUND(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_noSound')
+    def NO_ALARM_SOUND(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_noAlarmSound')
+    def KEY_SENSITIVE(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_keySensitive')
+    def DEFAULT_ID(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_defaultID')
+    def SN(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_SN')
+
+    def DEFAULT_GREEN(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_allGrin')
+    def BACKLIGHT(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_backlight')
+
+    def FIRE(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_fire2')
+    def ATTENTION(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_fire1')
+    def FAULT(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_fault')
+    def AUTO_OFF(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_autoOff')
+    def LEVEL_CONFIRM(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_levelConfirm')
+    def LENGTH_CONFIRM(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_lengthConfirm')
+    def PULSE_DIAL(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_pulseDial')
+    def NO_CONFIRM(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_noConfirm')
+    def PHONE_NUMBER(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_phoneNumber')
+    def ACCOUNT(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_Account')

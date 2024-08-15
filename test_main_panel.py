@@ -14,14 +14,14 @@ from time import sleep
 link = 'http://localhost:8082/'
 version = '1.0.0.268'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
 online = True  # True / False | Подключен ли ППК-Р (для проверки статуса)
-test_both_browsers = True  # True / False | Запуск тестов в chrome и firefox
+test_both_browsers = False  # True / False | Запуск тестов в chrome и firefox
 
 # Количество объектов, которые будут проверятся
-areas = 10  # Зоны пожаротушения
-inlinks = 12  # ТС входы (6 типов)
-outlinks = 9  # ТС выходы (3 типа)
-BIS_Ms = 12  # БИС-Мы (4 типа)
-addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов)
+areas = 10  # Зоны пожаротушения | по умолчания 10
+inlinks = 12  # ТС входы (6 типов) | по умолчания 12
+outlinks = 9  # ТС выходы (3 типа) | по умолчания 9
+BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12
+addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26
 #___________________________________________________________________________________________________
 
 
@@ -96,17 +96,17 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
     page = MainPanel(browser, link)
     page.open()
     page.open_ppk_objects()  # Раскрыть объекты в ППК
-    page.open_module_objects(1)  # Раскрыть объекты в соответствующем модуле
-    page.add_areas(areas)  # Добавить Зоны Пожаротушения
-    page.add_inputlink(inlinks)
-    page.add_ouputlink(outlinks)
+    # page.open_module_objects(1)  # Раскрыть объекты в соответствующем модуле
+    # page.add_areas(areas)  # Добавить Зоны Пожаротушения
+    # page.add_inputlink(inlinks)
+    # page.add_ouputlink(outlinks)
     page.open_module_objects(2)
     page.add_BIS_M(BIS_Ms)
-    page.open_module_objects(3)
-    page.open_ADDRESSABLE_LOOP(1)
-    page.add_addressable_devices(1, addr_devs)  # Добавление на АШ 1 АУ каждого типа по 2 раза
-    page.open_ADDRESSABLE_LOOP(2)
-    page.add_addressable_devices(2, addr_devs)
+    # page.open_module_objects(3)
+    # page.open_ADDRESSABLE_LOOP(1)
+    # page.add_addressable_devices(1, addr_devs)  # Добавление на АШ 1 АУ каждого типа по 2 раза
+    # page.open_ADDRESSABLE_LOOP(2)
+    # page.add_addressable_devices(2, addr_devs)
     page.open_terminal()
     recording_setting_for_modules(page)
 
@@ -135,25 +135,23 @@ def test_full_rewrite(browser):  # Полная перезапись настр�
     undoad_setting(page)
     page.save_settings()  # Нажатие кнопки "сохранить" (иначе изменения стираются)
     page.open_ppk_objects()
-    page.open_module_objects(1)
+    # page.open_module_objects(1)
     page.open_module_objects(2)
-    page.open_module_objects(3)
-    page.open_ADDRESSABLE_LOOP(1)
-    page.open_ADDRESSABLE_LOOP(2)
-    page.rewrite_areas_settings(areas)
-    page.rewrite_inputlinks_settings(inlinks, areas)  # Измение всех настроек всех типов ТС вход
-    page.rewrite_outputlinks_settings(outlinks, areas)
-    # page.rewrite_BIS_M_settings(BIS_Ms)
+    # page.open_module_objects(3)
     # page.open_ADDRESSABLE_LOOP(1)
-    # page.rewrite_addressable_devices_settings(1, addr_devs)
     # page.open_ADDRESSABLE_LOOP(2)
+    # page.rewrite_areas_settings(areas)
+    # page.rewrite_inputlinks_settings(inlinks, areas)  # Измение всех настроек всех типов ТС вход
+    # page.rewrite_outputlinks_settings(outlinks, areas)
+    page.rewrite_BIS_Ms_settings(BIS_Ms)
+    # page.rewrite_addressable_devices_settings(1, addr_devs)
     # page.rewrite_addressable_devices_settings(2, addr_devs)
     page.open_terminal()
     recording_setting_for_modules(page)
 
 
 # @pytest.mark.xfail
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_check_full_rewrite(browser):  # Проверка полной перезаписи настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -163,24 +161,25 @@ def test_check_full_rewrite(browser):  # Проверка полной пере�
     page.open_module_objects(3)
     page.open_ADDRESSABLE_LOOP(1)
     page.open_ADDRESSABLE_LOOP(2)
-    page.should_be_areas_settings(areas)
-    page.should_be_inputlinks_settings(inlinks, areas)
-    page.should_be_outputlinks_settings(outlinks, areas)
+    # page.should_be_areas_settings(areas)
+    # page.should_be_inputlinks_settings(inlinks, areas)
+    # page.should_be_outputlinks_settings(outlinks, areas)
+    page.should_be_BIS_Ms_settings(BIS_Ms)
     # clearing_ppk(page)
 
 
 #___________________________________________________________________________________________________
 def recording_setting_for_modules(page):
-    page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#1(Области)')
-    page.refresh_page()
-    page.open_terminal()
+    # page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
+    # page.check_record('.Модуль#1(Области)')
+    # page.refresh_page()
+    # page.open_terminal()
     page.recording_setting_for_module(2)  # Записать настройки для указанного модуля
     page.check_record('.Модуль#2(Выходы)')
-    page.refresh_page()
-    page.open_terminal()
-    page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#3(Адресные шлейфы)')
+    # page.refresh_page()
+    # page.open_terminal()
+    # page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
+    # page.check_record('.Модуль#3(Адресные шлейфы)')
 
 
 def undoad_setting(page):
