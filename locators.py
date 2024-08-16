@@ -207,3 +207,25 @@ class RS_485_SettingsLocators():
     def NO_CONFIRM(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_noConfirm')
     def PHONE_NUMBER(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_phoneNumber')
     def ACCOUNT(num): return (By.ID, f'id_1_Box_Module_2_SK_{num}_Account')
+
+
+class AddressableLoopSettingsLocators():
+    def DISABLE(AL, device_num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{device_num}_ignore')
+    def SN(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_SN')
+
+    def MODE(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_mode')
+    def MODE_ARROW(AL, num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_3_AL_{AL}_AU_{num}_mode + div')
+
+    def TWO_INPUTS(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_use2inputs')
+
+    def DIFFERENTIAL(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_diff')
+
+    def THRESHOLD(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_threshold')
+    def GROUP(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_group')
+
+    def MODE220(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_mode220')
+    def MODE220_ARROW(AL, num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_3_AL_{AL}_AU_{num}_mode220 + div')
+    def MOTOR(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_DC\\ motor')
+
+    def MODE24(AL, num): return (By.ID, f'id_1_Box_Module_3_AL_{AL}_AU_{num}_mode24')
+    def MODE24_ARROW(AL, num): return (By.CSS_SELECTOR, f'#id_1_Box_Module_3_AL_{AL}_AU_{num}_mode24 + div')
