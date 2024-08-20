@@ -67,6 +67,8 @@ class SystemObjectsLocators():
 
     def DROP_DOWN_LIST(num): return (By.XPATH, f'//div[@role="presentation"]//*[{num}]')
 
+    SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_Area_1_ .css-1fsho2b')
+
     def RECORD_START(module): return (By.XPATH, f'//p[contains(text(), "- в ППК ППК-Р#1{module}")]')
     RECORD_FINISH = (By.XPATH, '//p[contains(text(), " - stop sending to PPK: done uploading")]')
 

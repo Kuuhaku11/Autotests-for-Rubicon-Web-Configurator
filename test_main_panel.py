@@ -9,12 +9,13 @@ from time import sleep
 Некоторые тесты не будут работать, если конфигуратор уже отдельно открыт.
 Установка необходимых пакетов: pip install -r requirements.txt
 Команда для запуска через терминал: pytest -s -v .\test_main_panel.py
+Для запуска запуска тестов в firefox добавить параметр: --browser_name=firefox
 Для пропуска отдельных тестов можно раскомментировать фикстуру: @pytest.mark.skip
 '''
 link = 'http://localhost:8082/'
 version = '1.0.0.268'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
 online = True  # True / False | Подключен ли ППК-Р (для проверки статуса)
-test_both_browsers = False  # True / False | Запуск тестов в chrome и firefox
+headless = False  # True / False | Запуск тестов без отображения в браузере
 
 # Количество объектов, которые будут проверятся
 areas = 10  # Зоны пожаротушения | по умолчания 10
@@ -25,8 +26,7 @@ addr_devs = 26  # Адресные устройства для двух шлей
 #___________________________________________________________________________________________________
 
 
-pytestmark = pytest.mark.parametrize('browser_name', ['chrome', 'firefox']) if test_both_browsers \
-        else pytest.mark.parametrize('browser_name', [0])
+pytestmark = pytest.mark.parametrize('headless', [True if headless else False])
 
 # @pytest.mark.skip
 def test_title(browser):  # Проверка title
@@ -75,7 +75,7 @@ def test_connection_status(browser):  # Проверка статуса подк
 
 
 # @pytest.mark.skip
-def test_to_ppk_button(browser):  # Проверка кнопки В ППК с открытым Терминалом
+def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с открытым Терминалом
     page = MainPanel(browser, link)
     page.open()
     page.open_terminal()
@@ -86,7 +86,7 @@ def test_to_ppk_button(browser):  # Проверка кнопки В ППК с �
 
 
 # @pytest.mark.skip
-def test_from_ppk_button(browser):  # Проверка кнопки ИЗ ППК
+def test_from_ppk_button(browser):  # Проверка кнопки "ИЗ ППК"
     page = MainPanel(browser, link)
     undoad_setting(page)  # Выгрузка конфигурации из ППК и проверка
 
@@ -130,6 +130,17 @@ def test_full_unload_from_ppk(browser):  # Полная выгрузка из П
 
 
 # @pytest.mark.skip
+def test_save_button(browser):  # Проверка кнопки "сохранить"
+    page = MainPanel(browser, link)
+    undoad_setting(page)
+    page.open_ppk_objects()
+    page.open_module_objects(1)
+    page.save_button_should_be_clickable()
+    page.save_settings()
+    page.check_save_settings()
+
+
+# @pytest.mark.skip
 def test_full_rewrite(browser):  # Полная перезапись настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -151,7 +162,7 @@ def test_full_rewrite(browser):  # Полная перезапись настр�
 
 
 # @pytest.mark.xfail
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_check_full_rewrite(browser):  # Проверка полной перезаписи настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -167,7 +178,7 @@ def test_check_full_rewrite(browser):  # Проверка полной пере�
     page.should_be_BIS_Ms_settings(BIS_Ms)
     page.should_be_addressable_devices_settings(1, addr_devs)
     page.should_be_addressable_devices_settings(2, addr_devs)
-    # clearing_ppk(page)
+    clearing_ppk(page)
 
 
 #___________________________________________________________________________________________________
@@ -193,6 +204,7 @@ def undoad_setting(page):
 
 
 def clearing_ppk(page):
+    page.open_terminal()
     page.clear_module_1()
     page.clear_module_2()
     page.clear_module_3()

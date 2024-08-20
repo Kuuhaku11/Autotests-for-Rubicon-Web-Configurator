@@ -10,18 +10,19 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope='function')
-def browser(request, browser_name):
-    if browser_name == 0:
-        browser_name = request.config.getoption('browser_name')
+def browser(request, headless):
+    browser_name = request.config.getoption('browser_name')
     if browser_name == 'chrome':
         print('\nStart chrome for test...')
         options = Options()
-        options.add_argument('headless=new')
+        if headless:  # Если в настройках задан "True", то отображения в браузере не будет
+            options.add_argument('headless=new')
         browser = webdriver.Chrome(options=options)
     elif browser_name == 'firefox':
         print('\nStart firefox for test...')
         options = OptionsFirefox()
-        options.add_argument('--headless')
+        if headless:
+            options.add_argument('--headless')
         browser = webdriver.Firefox(options=options)
     else:
         raise pytest.UsageError('--browser_name should be chrome or firefox')
