@@ -17,8 +17,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         assert button_text == button_name, \
             f'Button "{button_name}" has a spelling error, button text: {button_text}'
 
-    # Проверка на наличие элемента и орфографические ошибки
-    def presence_and_spelling(self, locator, button_name):
+    def presence_and_spelling(self, locator, button_name):  # Проверка на наличие элемента и ошибки
         print(f'Checking the button "{button_name}"...')
         try:
             self.check_presence_and_spelling(locator, button_name)
@@ -51,6 +50,9 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def save_settings(self):
         self.browser.find_element(*MainPanelLocators.SAVE_BUTTON).click()
+    
+    def button_should_be_clickable(self, locator, button):
+        assert self.is_element_clickable(*locator), f'Button "{button}" is not clickable'
 
 
 # Проверка title
@@ -283,33 +285,254 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     
 # Проверка кнопки "Сохранить"
-    def save_button_should_be_clickable(self):
-        assert self.is_element_clickable(*MainPanelLocators.SAVE_BUTTON), \
-            'Button "СОХРАНИТЬ" is not clickable'
+    def check_save_setting_disable(self, locator, object_name):  # Проверка, что чекбокс включен
+        assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
+            AreaSettingsLocators.CHECKBOX_CHECKED[1] + locator[1]), \
+            f'Checkbox "отключен" in {object_name} was not saved'
     
-    def check_save_settings(self):  # Проверить, что у Зон Пожаротушения появилась зеленая точка
+    def check_save_settings(self):  # Проверить, что после обновления настройки сохраняются
         print('Checking save settings...')
+        self.button_should_be_clickable(MainPanelLocators.SAVE_BUTTON, 'СОХРАНИТЬ')
+        self.save_settings()
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
         assert self.is_element_present(*SystemObjectsLocators.SAVE_ICON), \
-            'Settings not saved, there is no green dot'
+            'Settings not saved, there is no green dot near the area #1'  # Проверка появления зеленой точки   
+        self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
+        self.browser.find_element(*AreaSettingsLocators.DISABLE(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
+        self.browser.find_element(*InputLinkSettingsLocators.DISABLE(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
+        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
+        self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
+        self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
+        self.browser.find_element(*RS_485_SettingsLocators.DISABLE(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, 1)).click()
+        self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(1, 1)).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(2)).click()
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(2, 1)).click()
+        self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(2, 1)).click()
+        self.save_settings()
+        self.restore_settings()
+        self.refresh_page()
+        self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
+        self.check_save_setting_disable(AreaSettingsLocators.DISABLE(1), f'area #{1}')
+        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
+        self.check_save_setting_disable(InputLinkSettingsLocators.DISABLE(1), f'inputlink #{1}')
+        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
+        self.check_save_setting_disable(OutputLinkSettingsLocators.DISABLE(1), f'outputlink #{1}')
+        self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
+        self.check_save_setting_disable(RS_485_SettingsLocators.DISABLE(1), f'RS-485 #{1}')
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, 1)).click()
+        self.check_save_setting_disable(AddressableLoopSettingsLocators.DISABLE(1, 1),
+                                        f'addressable device #{1} on loop {1}')
+        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(2, 1)).click()
+        self.check_save_setting_disable(AddressableLoopSettingsLocators.DISABLE(2, 1),
+                                        f'addressable device #{1} on loop {2}')
+        
+
+# Проверка кнопки "восстановить"
+    def restore_settings(self):
+        self.browser.find_element(*MainPanelLocators.RESTORE_BUTTON).click()
+        sleep(6)
+        assert self.is_not_element_present(*MainPanelLocators.RESTORE_MESSAGE, 1), \
+            'restore message did not disappear in 6 seconds'
+
+    def should_not_be_areas_settings(self, areas):
+        print(f'Checking default settings in {areas} areas...')
+        for num in range(1, areas):  # Проверка соответствия настроек в каждой Зоне Пожаротушения
+            self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(num)).click()
+            self.value_check(AreaSettingsLocators.ENTERS_THE_AREA(num),
+                             '', 'входит в область', f'area #{num}')
+            self.checkbox_unchecked(AreaSettingsLocators.DISABLE(num), 'отключен', f'area #{num}')
+            self.value_check(AreaSettingsLocators.DELAY_IN_EVACUATION(num),
+                             '0', 'задержка эвакуации', f'area #{num}')
+            self.value_check(AreaSettingsLocators.EXTINGUISHING_START_TIME(num),
+                             '0', 'время пуска тушения', f'area #{num}')
+            self.checkbox_unchecked(AreaSettingsLocators.EXTINGUISHING(num),
+                                    'есть пожаротушение', f'area #{num}')
+            self.checkbox_unchecked(AreaSettingsLocators.GAS_OUTPUT_SIGNAL(num),
+                                    'требуется сигнал выхода газа', f'area #{num}')
+            self.value_check(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR(num),
+                             'нет', 'взаимно исключает ДУ', f'area #{num}')
+            self.checkbox_unchecked(AreaSettingsLocators.EXTINGUISHING_BY_MFA(num),
+                                    'тушение по ИПР', f'area #{num}')
+            self.checkbox_unchecked(AreaSettingsLocators.FORWARD_IN_RING(num), 
+                                    'пересылать по кольцу', f'area #{num}')
+            self.value_check(AreaSettingsLocators.RETRY_DELAY(num),
+                             '60', 'задержка перезапроса', f'area #{num}')
+            self.value_check(AreaSettingsLocators.LAUNCH_ALGORITHM(num),
+                             'B (перезапрос)', 'алгоритм ЗКПС', f'area #{num}')                
+            self.value_check(AreaSettingsLocators.RESET_DELAY(num),
+                             '25', 'задержка сброса', f'area #{num}')
+
+    def should_not_be_inputlinks_settings(self, inlinks):
+        print(f'Checking default settings in {inlinks} inputlinks...')
+        for num in range(1, inlinks + 1):  # Проверка соответствия настроек в каждом ТС входе
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
+            self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
+                             '', 'ссылка(ИД)', f'inputlink #{num}')
+            self.value_check(InputLinkSettingsLocators.PARENT_AREA(num),
+                             '', 'входит в область', f'inputlink #{num}')
+            self.checkbox_unchecked(InputLinkSettingsLocators.DISABLE(num), 
+                                    'отключен', f'inputlink #{num}')
+            if num % 6 == 5:  # Тип ТС входа - вход команд
+                self.value_check(InputLinkSettingsLocators.COMMAND(num),
+                                 'сброс', 'команда', f'inputlink #{num}')
+            if num % 6 == 0:  # Тип ТС входа - вход технический
+                self.value_check(InputLinkSettingsLocators.CHANNEL(num),
+                                 '0', 'канал', f'inputlink #{num}')
+                self.checkbox_unchecked(InputLinkSettingsLocators.FIX(num),
+                                        'фиксировать', f'inputlink #{num}')
+    
+    def should_not_be_outputlinks_settings(self, outlinks):
+        print(f'Checking default settings in {outlinks} outputlinks...')
+        for num in range(1, outlinks + 1):  # Проверка соответствия настроек в каждом ТС выходе
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
+            self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
+                             '', 'ссылка(ИД)', f'outputlink #{num}')
+            self.value_check(OutputLinkSettingsLocators.PARENT_AREA(num), 
+                             '', 'входит в область', f'outputlink #{num}')
+            self.checkbox_unchecked(OutputLinkSettingsLocators.DISABLE(num),
+                                    'отключен', f'outputlink #{num}')
+            if num % 3 == 0:  # Тип ТС выхода - выход на реле
+                self.value_check(OutputLinkSettingsLocators.TURN_ON_DELAY(num),
+                                 '0', 'задержка включения', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.TURN_OFF_DELAY(num),
+                                 '0', 'задержка выключения', f'outputlink #{num}')              
+                self.checkbox_unchecked(OutputLinkSettingsLocators.NO_STOP(num),
+                                        'продолжать если НЕ условие', f'outputlink #{num}')
+                self.checkbox_unchecked(OutputLinkSettingsLocators.NO_RESTART_DELAY_ON(num),
+                                        'продолжать задержку включения при повторном', f'outputlink #{num}')
+                self.checkbox_unchecked(OutputLinkSettingsLocators.NO_RESTART_DELAY_OFF(num),
+                                        'продолжать задержку вЫключения при повторном', f'outputlink #{num}')
+                self.checkbox_unchecked(OutputLinkSettingsLocators.SINGLE_PULSE(num),
+                                        'однократный импульс', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
+                                 'отключено', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE2(num), 
+                                 'отключено', 'на ПОЖАР (пожар-2)', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
+                                 'отключено', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_FAULT(num), 
+                                 'отключено', 'на неисправность', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_REPAIR(num), 
+                                 'отключено', "на 'в ремонте'", f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EVACUATION(num), 
+                                 'отключено', 'на газ-уходи', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING(num), 
+                                 'отключено', 'на пуск тушения', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_AFTER_EXTINGUICHING(num), 
+                                 'отключено', 'на тушение закончено', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING_FAILED(num), 
+                                 'отключено', 'на тушение закончено неудачно', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_AUTO_OFF(num), 
+                                 'отключено', 'на авт. откл', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_RESET(num), 
+                                 'отключено', 'на сброс', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_DOOR(num), 
+                                 'отключено', 'на дверь открыта', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_BLOCKED(num), 
+                                 'отключено', 'на блокировка', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_EVACUATION_PAUSE(num), 
+                                 'отключено', 'на останов', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_DOOR_PAUSE(num), 
+                                 'отключено', 'на останов по двери', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.ON_CANCELLED(num), 
+                                 'отключено', 'на отмену пуска тушения', f'outputlink #{num}')
+                for tech_num in range(15):
+                    self.value_check(OutputLinkSettingsLocators.ON_TECH(num, tech_num), 
+                                     'отключено', f'на технический сигнал {tech_num}', f'outputlink #{num}')
+                self.value_check(OutputLinkSettingsLocators.AND_OR(num),
+                                 'по ИЛИ', 'И/или', f'outputlink #{num}')
+        
+    def should_not_be_BIS_Ms_settings(self, BIS_Ms):
+        print(f'Checking default settings in {BIS_Ms} BIS_Ms...')
+        for num in range(1, BIS_Ms + 1):  # Проверка соответствия настроек в каждом БИС-Ме
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num)).click()
+            self.checkbox_unchecked(RS_485_SettingsLocators.DISABLE(num), 'отключен', f'RS-485 #{num}')
+            if num % 4 == 0:  # Тип RS-485 - ТИ
+                self.checkbox_checked(RS_485_SettingsLocators.FIRE(num), 
+                                      'ПОЖАР', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.ATTENTION(num), 
+                                        'ВНИМАНИЕ', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.FAULT(num), 
+                                        'НЕИСПРАВНОСТЬ', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.AUTO_OFF(num), 
+                                        'автоматика ОТКЛ', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.LEVEL_CONFIRM(num),
+                                 '80', 'уровень ответа', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.LENGTH_CONFIRM(num),
+                                 '10', 'длительность ответа', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.PULSE_DIAL(num), 
+                                        'импульсный набор', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.NO_CONFIRM(num), 
+                                        'не ждать ответа', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.PHONE_NUMBER(num),
+                                 '', 'номер телефона', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.ACCOUNT(num),
+                                 '1000', 'аккаунт', f'RS-485 #{num}')
+            else:
+                if num % 4 == 3:  # Тип RS-485 - БИС-М3
+                    self.checkbox_unchecked(RS_485_SettingsLocators.DEFAULT_GREEN(num), 
+                                            'по умолчанию зеленые', f'RS-485 #{num}')
+                    self.value_check(RS_485_SettingsLocators.BACKLIGHT(num),
+                                     '0', 'подсветка', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.BRIGHTNESS(num),
+                                 '7', 'яркость', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.TIMEOUT(num),
+                                 '20', 'таймаут нажатий', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.NO_SOUND(num), 
+                                        'без звука', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.NO_ALARM_SOUND(num), 
+                                        'без звука тревог', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.KEY_SENSITIVE(num), 
+                                        'чувствительность клавиш', f'RS-485 #{num}')
+                self.value_check(RS_485_SettingsLocators.DEFAULT_ID(num),
+                                 '0', 'ИД по умолчанию', f'RS-485 #{num}')
+            self.value_check(RS_485_SettingsLocators.SN(num),
+                             str(2000 + num), 'серийный номер', f'RS-485 #{num}')
+    
+    def should_not_be_addressable_devices_settings(self, AL, addr_devs):
+        print(f'Checking default settings in {addr_devs} addressable devices in addressable loop {AL}...')
+        for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num)).click()
+            self.checkbox_unchecked(AddressableLoopSettingsLocators.DISABLE(AL, num), 
+                                    'отключен', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 2:  # Тип АУ - АР1
+                self.value_check(AddressableLoopSettingsLocators.MODE(AL, num),
+                                 'контроль линии, нет пожар2', 'режим', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 4:  # Тип АУ - АРмини
+                self.checkbox_checked(AddressableLoopSettingsLocators.TWO_INPUTS(AL, num), 
+                                      'два входа', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 5:  # Тип АУ - АТИ
+                self.value_check(AddressableLoopSettingsLocators.MODE(AL, num),
+                                 'A1', 'режим', f'addressable device #{num} on loop {AL}')
+                self.checkbox_unchecked(AddressableLoopSettingsLocators.DIFFERENTIAL(AL, num),
+                                        'дифференциальный', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 6:  # Тип АУ - АхДПИ
+                self.value_check(AddressableLoopSettingsLocators.THRESHOLD(AL, num),
+                                 '17', 'порог чувствительности', f'addressable device #{num} on loop {AL}')
+                self.value_check(AddressableLoopSettingsLocators.GROUP(AL, num),
+                                 '0', 'ЗКПС', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 10:  # Тип АУ - ИСМ4
+                self.value_check(AddressableLoopSettingsLocators.MODE220(AL, num),
+                                 '220v', 'режим', f'addressable device #{num} on loop {AL}')
+                self.checkbox_unchecked(AddressableLoopSettingsLocators.MOTOR(AL, num), 
+                                        'мотор с переполюсовкой', f'addressable device #{num} on loop {AL}')
+            if num % 13 == 11:  # Тип АУ - ИСМ5
+                self.value_check(AddressableLoopSettingsLocators.MODE24(AL, num),
+                                 'любое', 'напряжение питания', f'addressable device #{num} on loop {AL}')
+            self.value_check(AddressableLoopSettingsLocators.SN(AL, num),
+                             str(AL * 1000 + num), 'серийный номер', f'addressable device #{num} on loop {AL}')
 
 
 # Полная перезапись настроек ранее добавленных объектов
     def select_in_list(self, locator, item):  # Выбрать пункт в настройке с выпадающим списком
         self.browser.find_element(*locator).click()
         self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(item)).click()
-
-    def change_serial_number(self, locator, AL, addr_devs, num):  # Назначает устройствам разные серийники
-        action = ActionChains(self.browser)
-        sn = self.browser.find_element(*locator)  # Форма настройки серийного номера
-        sn.send_keys(123456789)  # Задать максимальное значение сн
-        action.move_to_element_with_offset(sn, 100, 5)  # Перемещение мыши на стрелки в поле сн
-        if AL == 0:
-            sleep(0.7)
-        for _ in range(1, num + (AL - 1) * addr_devs):
-            sleep(0.05)
-            action.click()  # Нажать на стрелку уменьшения сн
-        action.perform()  # Выполнить перечисленные действия
 
     def rewrite_areas_settings(self, areas):
         print(f'Rewrite settings in {areas} areas...')
@@ -325,12 +548,12 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                       ).send_keys(123456)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.GAS_OUTPUT_SIGNAL(area_num)).click()
-            self.select_in_list(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num), 2)
+            self.select_in_list(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num), 5)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.FORWARD_IN_RING(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.RETRY_DELAY(area_num)
                                       ).send_keys(123456)
-            self.select_in_list(AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num), 3)
+            self.select_in_list(AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num), 4)
             self.browser.find_element(*AreaSettingsLocators.RESET_DELAY(area_num)
                                       ).send_keys(123456)
     
@@ -338,7 +561,6 @@ class MainPanel(Page):  # Класс для тестирования по тес
         print(f'Rewrite settings in {inlinks} inputlinks...')
         self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
-        action = ActionChains(self.browser)
         for num in range(1, inlinks + 1):  # У каждого ТС входа изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
             link = self.browser.find_element(*InputLinkSettingsLocators.UNIT_ID(num))
@@ -346,7 +568,29 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 f'Addressable device #{num} for inputlink #{num} not found'
             device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
             self.browser.execute_script("arguments[0].scrollIntoView(true);", device)
-            ActionChains(self.browser).drag_and_drop(device, link).perform()  # Перемещение АУ
+            self.browser.execute_script("""
+                var src = arguments[0];
+                var tgt = arguments[1];
+                var dataTransfer = new DataTransfer();     
+                var dragStartEvent = new DragEvent('dragstart', {
+                    dataTransfer: dataTransfer,
+                    bubbles: true,
+                    cancelable: true
+                });
+                src.dispatchEvent(dragStartEvent);
+                var dropEvent = new DragEvent('drop', {
+                    dataTransfer: dataTransfer,
+                    bubbles: true,
+                    cancelable: true
+                });
+                tgt.dispatchEvent(dropEvent);
+                var dragEndEvent = new DragEvent('dragend', {
+                    dataTransfer: dataTransfer,
+                    bubbles: true,
+                    cancelable: true
+                });
+                src.dispatchEvent(dragEndEvent);
+            """, device, link)
             self.select_in_list(InputLinkSettingsLocators.PARENT_AREA(num), areas)
             self.browser.find_element(*InputLinkSettingsLocators.DISABLE(num)).click()
             if num % 6 == 5:  # Тип ТС входа - вход команд
@@ -417,7 +661,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*RS_485_SettingsLocators.LENGTH_CONFIRM(num)).send_keys(123)
                 self.browser.find_element(*RS_485_SettingsLocators.PULSE_DIAL(num)).click()
                 self.browser.find_element(*RS_485_SettingsLocators.NO_CONFIRM(num)).click()
-                self.browser.find_element(*RS_485_SettingsLocators.PHONE_NUMBER(num)).send_keys(1234567890123456)
+                self.browser.find_element(*RS_485_SettingsLocators.PHONE_NUMBER(num)
+                                          ).send_keys(1234567890123456)
                 self.browser.find_element(*RS_485_SettingsLocators.ACCOUNT(num)).send_keys(12345)
             else:
                 if num % 4 == 3:  # Тип RS-485 - БИС-М3
@@ -429,7 +674,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*RS_485_SettingsLocators.NO_ALARM_SOUND(num)).click()
                 self.browser.find_element(*RS_485_SettingsLocators.KEY_SENSITIVE(num)).click()
                 self.browser.find_element(*RS_485_SettingsLocators.DEFAULT_ID(num)).send_keys(12345678901)
-            self.change_serial_number(RS_485_SettingsLocators.SN(num), 0, 0, num)
+            self.browser.find_element(*RS_485_SettingsLocators.SN(num)).send_keys('\b\b\b\b', 65536 - num)
     
     def rewrite_addressable_devices_settings(self, AL, addr_devs):
         print(f'Rewrite settings in {addr_devs} addressable devices in addressable loop {AL}...')
@@ -451,75 +696,79 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.select_in_list(AddressableLoopSettingsLocators.MODE220_ARROW(AL, num), 5)
                 self.browser.find_element(*AddressableLoopSettingsLocators.MOTOR(AL, num)).click()
             if num % 13 == 11:  # Тип АУ - ИСМ5
-                self.select_in_list(AddressableLoopSettingsLocators.MODE24_ARROW(AL, num), 3)
-            self.change_serial_number(AddressableLoopSettingsLocators.SN(AL, num), AL, addr_devs, num)
+                self.select_in_list(AddressableLoopSettingsLocators.MODE24_ARROW(AL, num), 2)
+            self.browser.find_element(*AddressableLoopSettingsLocators.SN(AL, num)).send_keys(
+                '\b\b\b\b', 16777216 - num - (AL - 1) * addr_devs)  # Стирает 4 символа и вставляет сн
 
-# Проверка полной перезаписи настроек      
+# Проверка полной перезаписи настроек
     def value_check(self, locator, expected_value, set_name, object_name):  # Проверка значения настройки
         value = self.browser.find_element(*locator).get_attribute('value')
         assert expected_value == value, f'Value in "{set_name}" in {object_name} does not match, ' \
                                         f'expected "{expected_value}", value received "{value}"'
 
-    def checkbox_check(self, locator, checkbox_name, object_name):  # Проверка, что чекбокс включен
+    def checkbox_checked(self, locator, checkbox_name, object_name):  # Проверка, что чекбокс включен
         assert self.is_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
             AreaSettingsLocators.CHECKBOX_CHECKED[1] + locator[1]), \
             f'Checkbox "{checkbox_name}" in {object_name} is unchecked, expected to be checked'
+    
+    def checkbox_unchecked(self, locator, checkbox_name, object_name):  # Проверка, что чекбокс включен
+        assert self.is_not_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
+            AreaSettingsLocators.CHECKBOX_CHECKED[1] + locator[1], 0.1), \
+            f'Checkbox "{checkbox_name}" in {object_name} is checked, expected to be unchecked'
 
     def should_be_areas_settings(self, areas):
-        print(f'Check settings in {areas} areas...')
+        print(f'Checking settings in {areas} areas...')
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
         for num in range(1, areas):  # Проверка соответствия настроек в каждой Зоне Пожаротушения
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(num)).click()
             self.value_check(AreaSettingsLocators.ENTERS_THE_AREA(num),
-                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'area #{num}')
-            self.checkbox_check(AreaSettingsLocators.DISABLE(num), 'отключен', f'area #{num}')
+                             f'#{areas} Зона Пожаротушения ', 'входит в область', f'area #{num}')
+            self.checkbox_checked(AreaSettingsLocators.DISABLE(num), 'отключен', f'area #{num}')
             self.value_check(AreaSettingsLocators.DELAY_IN_EVACUATION(num),
-                            '1800', 'задержка эвакуации', f'area #{num}')
+                             '1800', 'задержка эвакуации', f'area #{num}')
             self.value_check(AreaSettingsLocators.EXTINGUISHING_START_TIME(num),
-                            '255', 'время пуска тушения', f'area #{num}')
-            self.checkbox_check(AreaSettingsLocators.EXTINGUISHING(num), 
-                                'есть пожаротушение', f'area #{num}')
-            self.checkbox_check(AreaSettingsLocators.GAS_OUTPUT_SIGNAL(num), 
-                                'требуется сигнал выхода газа', f'area #{num}')
+                             '255', 'время пуска тушения', f'area #{num}')
+            self.checkbox_checked(AreaSettingsLocators.EXTINGUISHING(num),
+                                  'есть пожаротушение', f'area #{num}')
+            self.checkbox_checked(AreaSettingsLocators.GAS_OUTPUT_SIGNAL(num),
+                                  'требуется сигнал выхода газа', f'area #{num}')
             self.value_check(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR(num),
-                            'интерлок', 'взаимно исключает ДУ', f'area #{num}')
-            self.checkbox_check(AreaSettingsLocators.EXTINGUISHING_BY_MFA(num), 
-                                'тушение по ИПР', f'area #{num}')
-            self.checkbox_check(AreaSettingsLocators.FORWARD_IN_RING(num), 
-                                'пересылать по кольцу', f'area #{num}')
+                             'не (пожар ИЛИ 1) блокирует 6', 'взаимно исключает ДУ', f'area #{num}')
+            self.checkbox_checked(AreaSettingsLocators.EXTINGUISHING_BY_MFA(num),
+                                  'тушение по ИПР', f'area #{num}')
+            self.checkbox_checked(AreaSettingsLocators.FORWARD_IN_RING(num), 
+                                  'пересылать по кольцу', f'area #{num}')
             self.value_check(AreaSettingsLocators.RETRY_DELAY(num),
-                            '16383', 'задержка перезапроса', f'area #{num}')
+                             '16383', 'задержка перезапроса', f'area #{num}')
             self.value_check(AreaSettingsLocators.LAUNCH_ALGORITHM(num),
-                            'C1 (две сработки)', 'алгоритм ЗКПС', f'area #{num}')                
+                             'C2 (два пожара или пожар+неисправность)', 'алгоритм ЗКПС', f'area #{num}')                
             self.value_check(AreaSettingsLocators.RESET_DELAY(num),
-                            '16383', 'задержка сброса', f'area #{num}') 
+                             '16383', 'задержка сброса', f'area #{num}')
 
     def should_be_inputlinks_settings(self, inlinks, areas):
-        print(f'Check settings in {inlinks} inputlinks...')
+        print(f'Checking settings in {inlinks} inputlinks...')
         self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
         for num in range(1, inlinks + 1):  # Проверка соответствия настроек в каждом ТС входе
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
             device_name = self.browser.find_element(
                 *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)).text
-            if self.browser.capabilities['browserName'] != 'firefox':
-                self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
-                            device_name, 'ссылка(ИД)', f'inputlink #{num}')
+            self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
+                             device_name, 'ссылка(ИД)', f'inputlink #{num}')
             self.value_check(InputLinkSettingsLocators.PARENT_AREA(num),
-                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'inputlink #{num}')
-            self.checkbox_check(InputLinkSettingsLocators.DISABLE(num), 
-                                'отключен', f'inputlink #{num}')
+                             f'#{areas} Зона Пожаротушения ', 'входит в область', f'inputlink #{num}')
+            self.checkbox_checked(InputLinkSettingsLocators.DISABLE(num), 'отключен', f'inputlink #{num}')
             if num % 6 == 5:  # Тип ТС входа - вход команд
                 self.value_check(InputLinkSettingsLocators.COMMAND(num),
-                                f'СДУ - газ пошел', 'команда', f'inputlink #{num}')
+                                 f'СДУ - газ пошел', 'команда', f'inputlink #{num}')
             if num % 6 == 0:  # Тип ТС входа - вход технический
                 self.value_check(InputLinkSettingsLocators.CHANNEL(num),
-                                f'14', 'канал', f'inputlink #{num}')
-                self.checkbox_check(InputLinkSettingsLocators.FIX(num), 'фиксировать', f'inputlink #{num}')
+                                 f'14', 'канал', f'inputlink #{num}')
+                self.checkbox_checked(InputLinkSettingsLocators.FIX(num), 'фиксировать', f'inputlink #{num}')
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
 
     def should_be_outputlinks_settings(self, outlinks, areas):
-        print(f'Check settings in {outlinks} outputlinks...')
+        print(f'Checking settings in {outlinks} outputlinks...')
         self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
         self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
         BIS_num = 1
@@ -529,153 +778,148 @@ class MainPanel(Page):  # Класс для тестирования по тес
             BIS_name = self.browser.find_element(
                 *SystemObjectsLocators.RS_485_ITEMS(BIS_num)).text
             BIS_num += 1
-            if self.browser.capabilities['browserName'] != 'firefox':
-                self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
-                            BIS_name, 'ссылка(ИД)', f'outputlink #{num}')
+            self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
+                             BIS_name, 'ссылка(ИД)', f'outputlink #{num}')
             self.value_check(OutputLinkSettingsLocators.PARENT_AREA(num), 
-                            f'#{areas} Зона Пожаротушения ', 'входит в область', f'outputlink #{num}')
-            self.checkbox_check(OutputLinkSettingsLocators.DISABLE(num), 'отключен', f'outputlink #{num}')
+                             f'#{areas} Зона Пожаротушения ', 'входит в область', f'outputlink #{num}')
+            self.checkbox_checked(OutputLinkSettingsLocators.DISABLE(num), 'отключен', f'outputlink #{num}')
             if num % 3 == 0:  # Тип ТС выхода - выход на реле
                 self.value_check(OutputLinkSettingsLocators.TURN_ON_DELAY(num),
-                                '16383', 'задержка включения', f'outputlink #{num}')
+                                 '16383', 'задержка включения', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.TURN_OFF_DELAY(num),
-                                '16383', 'задержка выключения', f'outputlink #{num}')              
-                self.checkbox_check(OutputLinkSettingsLocators.NO_STOP(num),
-                                    'продолжать если НЕ условие', f'outputlink #{num}')
-                self.checkbox_check(OutputLinkSettingsLocators.NO_RESTART_DELAY_ON(num),
-                                    'продолжать задержку включения при повторном', f'outputlink #{num}')
-                self.checkbox_check(OutputLinkSettingsLocators.NO_RESTART_DELAY_OFF(num),
-                                    'продолжать задержку вЫключения при повторном', f'outputlink #{num}')
-                self.checkbox_check(OutputLinkSettingsLocators.SINGLE_PULSE(num),
-                                    'однократный импульс', f'outputlink #{num}')
+                                 '16383', 'задержка выключения', f'outputlink #{num}')              
+                self.checkbox_checked(OutputLinkSettingsLocators.NO_STOP(num),
+                                      'продолжать если НЕ условие', f'outputlink #{num}')
+                self.checkbox_checked(OutputLinkSettingsLocators.NO_RESTART_DELAY_ON(num),
+                                      'продолжать задержку включения при повторном', f'outputlink #{num}')
+                self.checkbox_checked(OutputLinkSettingsLocators.NO_RESTART_DELAY_OFF(num),
+                                      'продолжать задержку вЫключения при повторном', f'outputlink #{num}')
+                self.checkbox_checked(OutputLinkSettingsLocators.SINGLE_PULSE(num),
+                                      'однократный импульс', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
-                                f'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
+                                 'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_FIRE2(num), 
-                                f'если есть', 'на ПОЖАР (пожар-2)', f'outputlink #{num}')
+                                 'если есть', 'на ПОЖАР (пожар-2)', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_FIRE1(num), 
-                                f'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
+                                 'если есть', 'на ВНИМАНИЕ (пожар-1)', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_FAULT(num), 
-                                f'если есть', 'на неисправность', f'outputlink #{num}')
+                                 'если есть', 'на неисправность', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_REPAIR(num), 
-                                f'если есть', "на 'в ремонте'", f'outputlink #{num}')
+                                 'если есть', "на 'в ремонте'", f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_EVACUATION(num), 
-                                f'если есть', 'на газ-уходи', f'outputlink #{num}')
+                                 'если есть', 'на газ-уходи', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING(num), 
-                                f'если есть', 'на пуск тушения', f'outputlink #{num}')
+                                 'если есть', 'на пуск тушения', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_AFTER_EXTINGUICHING(num), 
-                                f'если есть', 'на тушение закончено', f'outputlink #{num}')
+                                 'если есть', 'на тушение закончено', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_EXTINGUICHING_FAILED(num), 
-                                f'если есть', 'на тушение закончено неудачно', f'outputlink #{num}')
+                                 'если есть', 'на тушение закончено неудачно', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_AUTO_OFF(num), 
-                                f'если есть', 'на авт. откл', f'outputlink #{num}')
+                                 'если есть', 'на авт. откл', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_RESET(num), 
-                                f'если есть', 'на сброс', f'outputlink #{num}')
+                                 'если есть', 'на сброс', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_DOOR(num), 
-                                f'если есть', 'на дверь открыта', f'outputlink #{num}')
+                                 'если есть', 'на дверь открыта', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_BLOCKED(num), 
-                                f'если есть', 'на блокировка', f'outputlink #{num}')
+                                 'если есть', 'на блокировка', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_EVACUATION_PAUSE(num), 
-                                f'если есть', 'на останов', f'outputlink #{num}')
+                                 'если есть', 'на останов', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_DOOR_PAUSE(num), 
-                                f'если есть', 'на останов по двери', f'outputlink #{num}')
+                                 'если есть', 'на останов по двери', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.ON_CANCELLED(num), 
-                                f'если есть', 'на отмену пуска тушения', f'outputlink #{num}')
+                                 'если есть', 'на отмену пуска тушения', f'outputlink #{num}')
                 for tech_num in range(15):
                     self.value_check(OutputLinkSettingsLocators.ON_TECH(num, tech_num), 
-                                    f'если есть', f'на технический сигнал {tech_num}', f'outputlink #{num}')
+                                     'если есть', f'на технический сигнал {tech_num}', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.AND_OR(num),
-                                f'по И', 'И/или', f'outputlink #{num}')
+                                 'по И', 'И/или', f'outputlink #{num}')
         self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
     
     def should_be_BIS_Ms_settings(self, BIS_Ms):
-        print(f'Check settings in {BIS_Ms} BIS_Ms...')
+        print(f'Checking settings in {BIS_Ms} BIS_Ms...')
         self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
         for num in range(1, BIS_Ms + 1):  # Проверка соответствия настроек в каждом БИС-Ме
             self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num)).click()
-            self.checkbox_check(RS_485_SettingsLocators.DISABLE(num), 
-                                'отключен', f'RS-485 #{num}')
+            self.checkbox_checked(RS_485_SettingsLocators.DISABLE(num), 'отключен', f'RS-485 #{num}')
             if num % 4 == 0:  # Тип RS-485 - ТИ
-                self.checkbox_check(RS_485_SettingsLocators.FIRE(num), 
-                                    'ПОЖАР', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.ATTENTION(num), 
-                                    'ВНИМАНИЕ', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.FAULT(num), 
-                                    'НЕИСПРАВНОСТЬ', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.AUTO_OFF(num), 
-                                    'автоматика ОТКЛ', f'RS-485 #{num}')
+                self.checkbox_unchecked(RS_485_SettingsLocators.FIRE(num), 
+                                        'ПОЖАР', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.ATTENTION(num), 
+                                      'ВНИМАНИЕ', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.FAULT(num), 
+                                      'НЕИСПРАВНОСТЬ', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.AUTO_OFF(num), 
+                                      'автоматика ОТКЛ', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.LEVEL_CONFIRM(num),
-                                '2000', 'уровень ответа', f'RS-485 #{num}')
+                                 '2000', 'уровень ответа', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.LENGTH_CONFIRM(num),
-                                '15', 'длительность ответа', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.PULSE_DIAL(num), 
-                                    'импульсный набор', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.NO_CONFIRM(num), 
-                                    'не ждать ответа', f'RS-485 #{num}')
+                                 '15', 'длительность ответа', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.PULSE_DIAL(num), 
+                                      'импульсный набор', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.NO_CONFIRM(num), 
+                                      'не ждать ответа', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.PHONE_NUMBER(num),
-                                '1234567890123456', 'номер телефона', f'RS-485 #{num}')
+                                 '1234567890123456', 'номер телефона', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.ACCOUNT(num),
-                                '9999', 'аккаунт', f'RS-485 #{num}')
+                                 '9999', 'аккаунт', f'RS-485 #{num}')
             else:
                 if num % 4 == 3:  # Тип RS-485 - БИС-М3
-                    self.checkbox_check(RS_485_SettingsLocators.DEFAULT_GREEN(num), 
-                                    'по умолчанию зеленые', f'RS-485 #{num}')
+                    self.checkbox_checked(RS_485_SettingsLocators.DEFAULT_GREEN(num), 
+                                          'по умолчанию зеленые', f'RS-485 #{num}')
                     self.value_check(RS_485_SettingsLocators.BACKLIGHT(num),
-                                '255', 'подсветка', f'RS-485 #{num}')
+                                     '255', 'подсветка', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.BRIGHTNESS(num),
-                                '15', 'яркость', f'RS-485 #{num}')
+                                 '15', 'яркость', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.TIMEOUT(num),
-                                '255', 'таймаут нажатий', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.NO_SOUND(num), 
-                                    'без звука', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.NO_ALARM_SOUND(num), 
-                                    'без звука тревог', f'RS-485 #{num}')
-                self.checkbox_check(RS_485_SettingsLocators.KEY_SENSITIVE(num), 
-                                    'чувствительность клавиш', f'RS-485 #{num}')
+                                 '255', 'таймаут нажатий', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.NO_SOUND(num), 
+                                      'без звука', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.NO_ALARM_SOUND(num), 
+                                      'без звука тревог', f'RS-485 #{num}')
+                self.checkbox_checked(RS_485_SettingsLocators.KEY_SENSITIVE(num), 
+                                      'чувствительность клавиш', f'RS-485 #{num}')
                 self.value_check(RS_485_SettingsLocators.DEFAULT_ID(num),
-                                '2147483647', 'ИД по умолчанию', f'RS-485 #{num}')
+                                 '2147483647', 'ИД по умолчанию', f'RS-485 #{num}')
             self.value_check(RS_485_SettingsLocators.SN(num),
-                            str(65536 - num), 'серийный номер', f'RS-485 #{num}')
+                             str(65536 - num), 'серийный номер', f'RS-485 #{num}')
 
     def should_be_addressable_devices_settings(self, AL, addr_devs):
-        print(f'Check settings in {addr_devs} addressable devices in addressable loop {AL}...')
+        print(f'Checking settings in {addr_devs} addressable devices in addressable loop {AL}...')
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num)).click()
             if num % 13 != 10:  # Если не ИСМ4 (у него отключен)
-                self.checkbox_check(AddressableLoopSettingsLocators.DISABLE(AL, num), 
-                                'отключен', f'addressable device #{num} on loop {AL}')
+                self.checkbox_checked(AddressableLoopSettingsLocators.DISABLE(AL, num), 
+                                      'отключен', f'addressable device #{num} on loop {AL}')
             if num % 13 == 2:  # Тип АУ - АР1
                 self.value_check(AddressableLoopSettingsLocators.MODE(AL, num),
-                            'нет контроля, нет пожар2', 'режим', f'addressable device #{num} on loop {AL}')
+                                 'нет контроля, нет пожар2', 'режим', f'addressable device #{num} on loop {AL}')
             if num % 13 == 4:  # Тип АУ - АРмини
-                assert self.is_not_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                    AreaSettingsLocators.CHECKBOX_CHECKED[1] + 
-                    AddressableLoopSettingsLocators.TWO_INPUTS(AL, num)[1]), 'Checkbox "два входа" '\
-                    f'in addressable device #{num} on loop {AL} is checked, expected to be unchecked'
+                self.checkbox_unchecked(AddressableLoopSettingsLocators.TWO_INPUTS(AL, num), 
+                                        'два входа', f'addressable device #{num} on loop {AL}')
             if num % 13 == 5:  # Тип АУ - АТИ
                 self.value_check(AddressableLoopSettingsLocators.MODE(AL, num),
-                            'off', 'режим', f'addressable device #{num} on loop {AL}')
-                self.checkbox_check(AddressableLoopSettingsLocators.DIFFERENTIAL(AL, num),
-                                'дифференциальный', f'addressable device #{num} on loop {AL}')
+                                 'off', 'режим', f'addressable device #{num} on loop {AL}')
+                self.checkbox_checked(AddressableLoopSettingsLocators.DIFFERENTIAL(AL, num),
+                                      'дифференциальный', f'addressable device #{num} on loop {AL}')
             if num % 13 == 6:  # Тип АУ - АхДПИ
                 self.value_check(AddressableLoopSettingsLocators.THRESHOLD(AL, num),
-                            '50', 'порог чувствительности', f'addressable device #{num} on loop {AL}')
+                                 '50', 'порог чувствительности', f'addressable device #{num} on loop {AL}')
                 self.value_check(AddressableLoopSettingsLocators.GROUP(AL, num),
-                            '255', 'ЗКПС', f'addressable device #{num} on loop {AL}')
+                                 '255', 'ЗКПС', f'addressable device #{num} on loop {AL}')
             if num % 13 == 10:  # Тип АУ - ИСМ4
-                assert self.is_not_element_present(AreaSettingsLocators.CHECKBOX_CHECKED[0],
-                    AreaSettingsLocators.CHECKBOX_CHECKED[1] +
-                    AddressableLoopSettingsLocators.DISABLE(AL, num)[1]), f'Checkbox "отключен" '\
-                    f'in addressable device #{num} on loop {AL} is checked, expected to be unchecked'
+                self.checkbox_unchecked(AddressableLoopSettingsLocators.DISABLE(AL, num), 
+                                        'отключен', f'addressable device #{num} on loop {AL}')
                 self.value_check(AddressableLoopSettingsLocators.MODE220(AL, num),
-                            'игнорировать', 'режим', f'addressable device #{num} on loop {AL}')
-                self.checkbox_check(AddressableLoopSettingsLocators.MOTOR(AL, num), 
-                                'мотор с переполюсовкой', f'addressable device #{num} on loop {AL}')
+                                 'игнорировать', 'режим', f'addressable device #{num} on loop {AL}')
+                self.checkbox_checked(AddressableLoopSettingsLocators.MOTOR(AL, num), 
+                                      'мотор с переполюсовкой', f'addressable device #{num} on loop {AL}')
             if num % 13 == 11:  # Тип АУ - ИСМ5
                 self.value_check(AddressableLoopSettingsLocators.MODE24(AL, num),
-                            'любое', 'напряжение питания', f'addressable device #{num} on loop {AL}')
+                                 '24v', 'напряжение питания', f'addressable device #{num} on loop {AL}')
             self.value_check(AddressableLoopSettingsLocators.SN(AL, num),
-                            str(16777216 - num - (AL - 1) * addr_devs), 'серийный номер', f'addressable device #{num} on loop {AL}')
+                             str(16777216 - num - (AL - 1) * addr_devs), 'серийный номер', 
+                             f'addressable device #{num} on loop {AL}')
 
 
 # Очистка ППК от объектов

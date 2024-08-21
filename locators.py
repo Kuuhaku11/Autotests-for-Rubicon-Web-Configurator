@@ -9,6 +9,7 @@ class MainPanelLocators():
     FROM_PPK_BUTTON_IS_BLINKING = (By.CLASS_NAME, 'css-1poz9ah')
     SAVE_BUTTON = (By.ID, 'save_config_to_local_storage')
     RESTORE_BUTTON = (By.ID, 'restore_config_from_local_storage')
+    RESTORE_MESSAGE = (By.ID, 'mui-2')
     TO_FILE_BUTTON = (By.CSS_SELECTOR, '.MuiToolbar-root :nth-child(8)')
     TO_FILE_FOR_INTELLECT_BUTTON = (By.CSS_SELECTOR, '[aria-label="В Файл для Интеллекта"]')
     FROM_FILE_BUTTON = (By.CSS_SELECTOR, '.MuiToolbar-root :nth-child(10)')
