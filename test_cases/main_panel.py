@@ -163,11 +163,11 @@ class MainPanel(Page):  # Класс для тестирования по тес
         assert self.is_element_present(*MainPanelLocators.TO_PPK_BUTTON_IS_BLINKING), \
             'Button "В ППК" does not blink'
 
-    def check_record(self, module=''):
+    def check_record(self, module='', timeout=30):
         print(f'Checking start and finish of recording for {'ppk' if module == '' else module[1:]}...')
         assert self.is_element_present(*SystemObjectsLocators.RECORD_START(module)), \
             f'Recording for {'ppk' if module == '' else module[1:]} has not started'
-        flag = self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, 300)  # Ожидание 5 мин
+        flag = self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, timeout)
         assert flag, f'Recording for {'ppk' if module == '' else module[1:]} has not finished'
 
 
@@ -183,19 +183,19 @@ class MainPanel(Page):  # Класс для тестирования по тес
         print(f'Checking start and finish of unloading for ppk and moduls...')
         assert self.is_element_present(*SystemObjectsLocators.UNLOAD_START), \
             f'Unload for all ppkr has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 30), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 10), \
             f'Unload for module 1 has not started or there is a spelling error'
         assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_1, 30), \
             f'Unload for module 1 has not finished or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, 30), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, 10), \
             f'Unload for module 2 has not started or there is a spelling error'
         assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_2, 30), \
             f'Unload for module 2 has not finished or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, 30), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, 10), \
             f'Unload for module 3 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_3, 30), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_3, 10), \
             f'Unload for module 3 has not finished or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, 30), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, 60), \
             f'Unload for all ppkr has not finished or there is a spelling error'
 
 
@@ -533,6 +533,32 @@ class MainPanel(Page):  # Класс для тестирования по тес
     def select_in_list(self, locator, item):  # Выбрать пункт в настройке с выпадающим списком
         self.browser.find_element(*locator).click()
         self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(item)).click()
+    
+    def move_element(self, device, link):  # Перемещает device в поле link
+        self.browser.execute_script("arguments[0].scrollIntoView(true);", device)  # Прокрутить до элемента
+        self.browser.execute_script("""
+            var src = arguments[0];
+            var tgt = arguments[1];
+            var dataTransfer = new DataTransfer();     
+            var dragStartEvent = new DragEvent('dragstart', {
+                dataTransfer: dataTransfer,
+                bubbles: true,
+                cancelable: true
+            });
+            src.dispatchEvent(dragStartEvent);
+            var dropEvent = new DragEvent('drop', {
+                dataTransfer: dataTransfer,
+                bubbles: true,
+                cancelable: true
+            });
+            tgt.dispatchEvent(dropEvent);
+            var dragEndEvent = new DragEvent('dragend', {
+                dataTransfer: dataTransfer,
+                bubbles: true,
+                cancelable: true
+            });
+            src.dispatchEvent(dragEndEvent);
+        """, device, link)
 
     def rewrite_areas_settings(self, areas):
         print(f'Rewrite settings in {areas} areas...')
@@ -567,30 +593,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             assert self.is_element_present(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)), \
                 f'Addressable device #{num} for inputlink #{num} not found'
             device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
-            self.browser.execute_script("arguments[0].scrollIntoView(true);", device)
-            self.browser.execute_script("""
-                var src = arguments[0];
-                var tgt = arguments[1];
-                var dataTransfer = new DataTransfer();     
-                var dragStartEvent = new DragEvent('dragstart', {
-                    dataTransfer: dataTransfer,
-                    bubbles: true,
-                    cancelable: true
-                });
-                src.dispatchEvent(dragStartEvent);
-                var dropEvent = new DragEvent('drop', {
-                    dataTransfer: dataTransfer,
-                    bubbles: true,
-                    cancelable: true
-                });
-                tgt.dispatchEvent(dropEvent);
-                var dragEndEvent = new DragEvent('dragend', {
-                    dataTransfer: dataTransfer,
-                    bubbles: true,
-                    cancelable: true
-                });
-                src.dispatchEvent(dragEndEvent);
-            """, device, link)
+            self.move_element(device, link)
             self.select_in_list(InputLinkSettingsLocators.PARENT_AREA(num), areas)
             self.browser.find_element(*InputLinkSettingsLocators.DISABLE(num)).click()
             if num % 6 == 5:  # Тип ТС входа - вход команд
@@ -612,8 +615,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             assert self.is_element_present(*SystemObjectsLocators.RS_485_ITEMS(BIS_num)), \
                 f'BIS-M #{num} for outputlink #{num} not found'
             BIS_m = self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(BIS_num))
-            self.browser.execute_script("arguments[0].scrollIntoView(true);", BIS_m)
-            ActionChains(self.browser).drag_and_drop(BIS_m, link).perform()  # Перемещение БИС_М
+            self.move_element(BIS_m, link)
             BIS_num += 1
             self.browser.find_element(*OutputLinkSettingsLocators.PARENT_AREA(num)).click()
             self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas)).click()

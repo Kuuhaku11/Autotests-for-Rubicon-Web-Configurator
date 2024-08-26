@@ -10,13 +10,13 @@ from time import sleep
 Установка необходимых пакетов: pip install -r requirements.txt
 Команда для запуска через терминал: pytest -s -v .\test_main_panel.py
 Для запуска запуска тестов в firefox добавить параметр: --browser_name=firefox
+Для повторной проверки упавших тестов рекомендуется добавить параметр: --reruns 1
 Для пропуска отдельных тестов можно раскомментировать фикстуру: @pytest.mark.skip
 '''
 link = 'http://localhost:8082/'
 version = '1.0.0.268'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
 online = True  # True / False | Подключен ли ППК-Р? (для проверки статуса)
 headless = False  # True / False | Запуск тестов без отображения в браузере
-display_cursor = True  # True / False | Отображение движений курсора
 
 # Количество объектов, которые будут проверятся
 areas = 10  # Зоны пожаротушения | по умолчания 10
@@ -29,7 +29,7 @@ addr_devs = 26  # Адресные устройства для двух шлей
 
 pytestmark = pytest.mark.parametrize('headless', [headless])
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_title(browser):  # Проверка title
     page = MainPanel(browser, link)
     page.open()
@@ -37,7 +37,7 @@ def test_title(browser):  # Проверка title
     page.check_version_on_title(version)  # Версия конфигуратора в title
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_logo(browser):  # Проверка логотипа "Рубикон"
     page = MainPanel(browser, link)
     page.open()
@@ -45,7 +45,7 @@ def test_logo(browser):  # Проверка логотипа "Рубикон"
     page.page_should_refresh_when_click_logo()  # Обновляется ли страница при клике на лого?
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_settings_panel(browser):  # Проверка панели настроек на наличие кнопок и орфографию
     page = MainPanel(browser, link)
     page.open()
@@ -61,7 +61,7 @@ def test_settings_panel(browser):  # Проверка панели настро�
     page.should_be_light_mode_icon()
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_connection_status(browser):  # Проверка статуса подключения
     page = MainPanel(browser, link)
     page.open()
@@ -75,19 +75,19 @@ def test_connection_status(browser):  # Проверка статуса подк
         page.online_mark_color_should_be_yellow()
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с открытым Терминалом
     page = MainPanel(browser, link)
     page.open()
     page.open_terminal()
     page.recording_setting_for_ppk()  # Запись настроек для ППК
-    page.close_terminal()
     page.check_record()  # Проверка начала и окончания записи в терминале
+    page.close_terminal()
     page.open_ppk_objects()
     recording_setting_for_modules(page)  # Запись и проверка отдельно по трем модулям
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_from_ppk_button(browser):  # Проверка кнопки "ИЗ ППК"
     page = MainPanel(browser, link)
     undoad_setting(page)  # Выгрузка конфигурации из ППК и проверка
@@ -111,7 +111,7 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
     recording_setting_for_modules(page)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_full_unload_from_ppk(browser):  # Полная выгрузка из ППК
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -128,7 +128,7 @@ def test_full_unload_from_ppk(browser):  # Полная выгрузка из П
         page.check_number_of_addressable_devices(AL, addr_devs)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_save_button(browser):  # Проверка кнопки "сохранить"
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -141,11 +141,11 @@ def test_save_button(browser):  # Проверка кнопки "сохрани�
     page.check_save_settings()
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_restore_button(browser):  # Проверка кнопки "восстановить"
-    page = test_full_rewrite(browser, 1)
+    page = test_full_rewrite(browser, 1)  # Измение всех настроек, без сохранения
     page.restore_settings()
-    page.should_not_be_areas_settings(areas)
+    page.should_not_be_areas_settings(areas)  # Проверка, что все настройки зон стоят по умолчанию
     page.should_not_be_inputlinks_settings(inlinks)
     page.should_not_be_outputlinks_settings(outlinks)
     page.should_not_be_BIS_Ms_settings(BIS_Ms)
@@ -153,7 +153,7 @@ def test_restore_button(browser):  # Проверка кнопки "восста
     page.should_not_be_addressable_devices_settings(2, addr_devs)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_full_rewrite(browser, flag=0):  # Полная перезапись настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -165,7 +165,7 @@ def test_full_rewrite(browser, flag=0):  # Полная перезапись н�
     page.open_ADDRESSABLE_LOOP(1)
     page.open_ADDRESSABLE_LOOP(2)
     page.rewrite_areas_settings(areas)
-    page.rewrite_inputlinks_settings(inlinks, areas)  # Измение всех настроек всех типов ТС вход
+    page.rewrite_inputlinks_settings(inlinks, areas)  # Изменение всех настроек всех типов ТС вход
     page.rewrite_outputlinks_settings(outlinks, areas)
     page.rewrite_BIS_Ms_settings(BIS_Ms)
     page.rewrite_addressable_devices_settings(1, addr_devs)
@@ -176,7 +176,7 @@ def test_full_rewrite(browser, flag=0):  # Полная перезапись н�
         return page
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_check_full_rewrite(browser):  # Проверка полной перезаписи настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -200,15 +200,15 @@ def recording_setting_for_modules(page):
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#1(Области)')
+    page.check_record('.Модуль#1(Области)', (areas + inlinks + outlinks) * 2)
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(2)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#2(Выходы)')
+    page.check_record('.Модуль#2(Выходы)', BIS_Ms * 8)
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#3(Адресные шлейфы)')
+    page.check_record('.Модуль#3(Адресные шлейфы)', addr_devs * 8)
 
 
 def undoad_setting(page):

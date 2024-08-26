@@ -23,8 +23,8 @@ class Page():
             self.browser.implicitly_wait(0)  # Временное отключение неявного ожидание
             WebDriverWait(self.browser, wait).until(EC.presence_of_element_located((how, what)))
         except TimeoutException:
+            self.browser.implicitly_wait(self.timeout)  # Восстановление неявного ожидания
             return True
-        self.browser.implicitly_wait(self.timeout)  # Восстановление неявного ожидания
         return False
 
     def is_element_clickable(self, how, what, wait=3):
