@@ -1,14 +1,14 @@
-from test_cases.main_panel import MainPanel # type: ignore
-import pytest # type: ignore
+from test_cases.main_panel import MainPanel
+import pytest
 from time import sleep
 
 
-#___________________________________________________________________________________________________
+#===================================================================================================
 '''Главная панель (DRBN-T52).
 Предполагается проверка пустого ППК-Р с номером 1.
 Некоторые тесты не будут работать, если конфигуратор уже отдельно открыт.
 Установка необходимых пакетов: pip install -r requirements.txt
-Команда для запуска через терминал: pytest -s -v .\test_main_panel.py
+Команда для запуска через терминал: pytest -s -v --tb=short .\test_main_panel.py
 Для запуска запуска тестов в firefox добавить параметр: --browser_name=firefox
 Для повторной проверки упавших тестов рекомендуется добавить параметр: --reruns 1
 Для пропуска отдельных тестов можно раскомментировать фикстуру: @pytest.mark.skip
@@ -24,12 +24,12 @@ inlinks = 12  # ТС входы (6 типов) | по умолчания 12
 outlinks = 9  # ТС выходы (3 типа) | по умолчания 9
 BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12
 addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26
-#___________________________________________________________________________________________________
+#===================================================================================================
 
 
 pytestmark = pytest.mark.parametrize('headless', [headless])
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_title(browser):  # Проверка title
     page = MainPanel(browser, link)
     page.open()
@@ -37,7 +37,7 @@ def test_title(browser):  # Проверка title
     page.check_version_on_title(version)  # Версия конфигуратора в title
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_logo(browser):  # Проверка логотипа "Рубикон"
     page = MainPanel(browser, link)
     page.open()
@@ -45,7 +45,7 @@ def test_logo(browser):  # Проверка логотипа "Рубикон"
     page.page_should_refresh_when_click_logo()  # Обновляется ли страница при клике на лого?
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_settings_panel(browser):  # Проверка панели настроек на наличие кнопок и орфографию
     page = MainPanel(browser, link)
     page.open()
@@ -61,7 +61,7 @@ def test_settings_panel(browser):  # Проверка панели настро�
     page.should_be_light_mode_icon()
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_connection_status(browser):  # Проверка статуса подключения
     page = MainPanel(browser, link)
     page.open()
@@ -75,7 +75,7 @@ def test_connection_status(browser):  # Проверка статуса подк
         page.online_mark_color_should_be_yellow()
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с открытым Терминалом
     page = MainPanel(browser, link)
     page.open()
@@ -87,7 +87,7 @@ def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с
     recording_setting_for_modules(page)  # Запись и проверка отдельно по трем модулям
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_from_ppk_button(browser):  # Проверка кнопки "ИЗ ППК"
     page = MainPanel(browser, link)
     undoad_setting(page)  # Выгрузка конфигурации из ППК и проверка
@@ -111,7 +111,7 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
     recording_setting_for_modules(page)
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_full_unload_from_ppk(browser):  # Полная выгрузка из ППК
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -128,7 +128,7 @@ def test_full_unload_from_ppk(browser):  # Полная выгрузка из П
         page.check_number_of_addressable_devices(AL, addr_devs)
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_save_button(browser):  # Проверка кнопки "сохранить"
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -141,7 +141,7 @@ def test_save_button(browser):  # Проверка кнопки "сохрани�
     page.check_save_settings()
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_restore_button(browser):  # Проверка кнопки "восстановить"
     page = test_full_rewrite(browser, 1)  # Измение всех настроек, без сохранения
     page.restore_settings()
@@ -153,7 +153,7 @@ def test_restore_button(browser):  # Проверка кнопки "восста
     page.should_not_be_addressable_devices_settings(2, addr_devs)
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_full_rewrite(browser, flag=0):  # Полная перезапись настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
@@ -176,7 +176,7 @@ def test_full_rewrite(browser, flag=0):  # Полная перезапись н�
         return page
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_check_full_rewrite(browser):  # Проверка полной перезаписи настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
