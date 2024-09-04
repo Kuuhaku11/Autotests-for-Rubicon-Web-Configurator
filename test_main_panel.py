@@ -108,6 +108,8 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
     for AL in 1, 2:
         page.open_ADDRESSABLE_LOOP(AL)
         page.add_addressable_devices(AL, addr_devs)  # На АШ добавляются АУ каждого типа
+    page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты модут удалиться
+    page.refresh_page()  # При обновлении у объектов активируются настройки по умолчанию
     recording_setting_for_modules(page)
 
 
@@ -143,7 +145,8 @@ def test_save_button(browser):  # Проверка кнопки "сохрани�
 
 # @pytest.mark.skip
 def test_restore_button(browser):  # Проверка кнопки "восстановить"
-    page = test_full_rewrite(browser, 1)  # Измение всех настроек, без сохранения
+    test_full_rewrite(browser, True)  # Измение всех настроек, без сохранения
+    page = MainPanel(browser, link)
     page.restore_settings()
     page.should_not_be_areas_settings(areas)  # Проверка, что все настройки зон стоят по умолчанию
     page.should_not_be_inputlinks_settings(inlinks)
@@ -154,7 +157,7 @@ def test_restore_button(browser):  # Проверка кнопки "восста
 
 
 # @pytest.mark.skip
-def test_full_rewrite(browser, flag=0):  # Полная перезапись настроек
+def test_full_rewrite(browser, call_from_another_func=False):  # Полная перезапись настроек
     page = MainPanel(browser, link)
     undoad_setting(page)
     page.save_settings()  # Нажатие кнопки "сохранить" (иначе изменения стираются)
@@ -170,16 +173,15 @@ def test_full_rewrite(browser, flag=0):  # Полная перезапись н�
     page.rewrite_BIS_Ms_settings(BIS_Ms)
     page.rewrite_addressable_devices_settings(1, addr_devs)
     page.rewrite_addressable_devices_settings(2, addr_devs)
-    if flag == 0:
+    if call_from_another_func == False:
         recording_setting_for_modules(page)
-    else:
-        return page
 
 
 # @pytest.mark.skip
-def test_check_full_rewrite(browser):  # Проверка полной перезаписи настроек
+def test_check_full_rewrite(browser, call_from_another_func=False):  # Проверка перезаписи настроек
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    if call_from_another_func == False:
+        undoad_setting(page)
     page.open_ppk_objects()
     page.open_module_objects(1)
     page.open_module_objects(2)
@@ -192,11 +194,43 @@ def test_check_full_rewrite(browser):  # Проверка полной пере�
     page.should_be_BIS_Ms_settings(BIS_Ms)
     page.should_be_addressable_devices_settings(1, addr_devs)
     page.should_be_addressable_devices_settings(2, addr_devs)
+
+
+# @pytest.mark.skip
+def test_to_file_button(browser):  # Проверка кнопки "в файл"
+    page = MainPanel(browser, link)
+    undoad_setting(page)
+    page.click_to_file_button()
+    page.dismiss()
+    page.click_to_file_button()
+    page.accept()
+
+
+# @pytest.mark.skip
+def test_to_file_for_intellect_button(browser):  # Проверка кнопки "в файл для Интеллекта"
+    page = MainPanel(browser, link)
+    undoad_setting(page)
+    page.click_to_file_for_intellect_button()
+    page.dismiss()
+    page.click_to_file_for_intellect_button()
+    page.accept()
+    page.delete_config_for_Intellect_file()
+
+
+# @pytest.mark.skip
+def test_from_file_button(browser):  # Проверка кнопки "из файла"
+    page = MainPanel(browser, link)
+    page.open()
+    page.click_from_file_button()
+    page.load_configuration_from_file()
+    page.delete_config_file()
+    test_check_full_rewrite(browser, True)
     clearing_ppk(page)
 
 
-#___________________________________________________________________________________________________
+#===================================================================================================
 def recording_setting_for_modules(page):
+    page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты модут удалиться
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
@@ -208,7 +242,7 @@ def recording_setting_for_modules(page):
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#3(Адресные шлейфы)', addr_devs * 8)
+    page.check_record('.Модуль#3(Адресные шлейфы)', addr_devs * 12)
 
 
 def undoad_setting(page):

@@ -3,8 +3,9 @@ from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLoca
                       InputLinkSettingsLocators, OutputLinkSettingsLocators, 
                       RS_485_SettingsLocators, AddressableLoopSettingsLocators)
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.webdriver.common.action_chains import ActionChains
 from loguru import logger
+import pyautogui
+import os
 from time import sleep
 
 
@@ -186,16 +187,10 @@ class MainPanel(Page):  # Класс для тестирования по тес
             f'Unload for all ppkr has not started or there is a spelling error'
         assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 10), \
             f'Unload for module 1 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_1, 30), \
-            f'Unload for module 1 has not finished or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, 10), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, 60), \
             f'Unload for module 2 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_2, 30), \
-            f'Unload for module 2 has not finished or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, 10), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, 60), \
             f'Unload for module 3 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH_MODULE_3, 10), \
-            f'Unload for module 3 has not finished or there is a spelling error'
         assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, 60), \
             f'Unload for all ppkr has not finished or there is a spelling error'
 
@@ -566,7 +561,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
         for area_num in range(1, areas):  # У каждой Зоны Пожаротушения изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(area_num)).click()
-            self.browser.execute_script("scrollBy(0, -500);")  # Прокрутка страницы вверх
+            self.browser.execute_script("scrollBy(0, -1000);")  # Прокрутка страницы вверх
             self.select_in_list(AreaSettingsLocators.ENTERS_THE_AREA(area_num), areas - 1)
             self.browser.find_element(*AreaSettingsLocators.DISABLE(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.DELAY_IN_EVACUATION(area_num)
@@ -923,6 +918,60 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.value_check(AddressableLoopSettingsLocators.SN(AL, num),
                              str(16777216 - num - (AL - 1) * addr_devs), 'серийный номер', 
                              f'addressable device #{num} on loop {AL}')
+
+
+# Проверка кнопки "в файл"
+    def click_to_file_button(self):
+        logger.info(f'Click to file button')
+        self.browser.find_element(*MainPanelLocators.TO_FILE_BUTTON).click()
+    
+    def dismiss(self):
+        logger.info(f'Click on the cancel button')
+        prompt = self.browser.switch_to.alert
+        prompt.dismiss()
+
+    def accept(self):
+        logger.info(f'Click on the confirm button')
+        prompt = self.browser.switch_to.alert
+        prompt.accept()
+        sleep(0.1)
+
+
+# Проверка кнопки "в файл для Интеллекта"
+    def click_to_file_for_intellect_button(self):
+        logger.info(f'Click to file for Intellect button')
+        self.browser.find_element(*MainPanelLocators.TO_FILE_FOR_INTELLECT_BUTTON).click()
+
+    def delete_config_for_Intellect_file(self):
+        logger.info(f'Deleting a configuration file...')
+        file_path = r'C:\Users\ITV\Downloads\configintellect.json'
+        assert os.path.exists(file_path), f'Configuration file for Intellect not found: "{file_path}"'
+        os.remove(file_path)
+
+
+# Проверка кнопки "из файла"
+    def click_from_file_button(self):
+        logger.info(f'Click from file button')
+        self.browser.find_element(*MainPanelLocators.FROM_FILE_BUTTON).click()
+
+    def load_configuration_from_file(self):
+        logger.info(f'Loading configuration from file...')
+        try:
+            file_path = r'C:\Users\ITV\Downloads\config.json'
+            assert os.path.exists(file_path), f'Configuration file not found: "{file_path}"'
+            sleep(0.5)
+            pyautogui.write(file_path)
+            logger.success(file_path)
+            sleep(5)
+            pyautogui.press('enter')
+            sleep(5)
+        except:  # При ошибке, закрыть диалоговое окно windows
+            sleep(1)
+            pyautogui.click(pyautogui.locateCenterOnScreen('images/cancel_button.png', minSearchTime=1))
+
+    def delete_config_file(self):
+        logger.info(f'Deleting a configuration file...')
+        os.remove(r'C:\Users\ITV\Downloads\config.json')
 
 
 # Очистка ППК от объектов

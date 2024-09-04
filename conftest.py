@@ -8,7 +8,8 @@ import sys
 
 #  Все логи записываются в "test_log.log", но начало и окончание тестов не отображаются в терминале
 logger.remove()
-logger.add('test_log.log', format='{time:MMMM D, YYYY > HH:mm:ss} | {level} | {message}', level='DEBUG')
+logger.add('logs/test_log.log', format='{time:MMMM D, YYYY > HH:mm:ss} | {level} | {message}',
+           level='DEBUG', rotation='200 KB')
 logger.add(sys.stderr, level='INFO')
 
 def pytest_addoption(parser):
@@ -41,7 +42,7 @@ def browser(request, headless):
     browser_name = request.config.getoption('browser_name')
     if browser_name == 'chrome':
         print()
-        logger.info('Start chrome for test...')
+        logger.info(f'Start chrome for "{request.node.name}"...')
         options = Options()
         if headless:  # Если в настройках задан "True", то отображения в браузере не будет
             options.add_argument('headless=new')
