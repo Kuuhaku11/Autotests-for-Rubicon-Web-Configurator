@@ -9,7 +9,7 @@ import sys
 #  Все логи записываются в "test_log.log", но начало и окончание тестов не отображаются в терминале
 logger.remove()
 logger.add('logs/test_log.log', format='{time:MMMM D, YYYY > HH:mm:ss} | {level} | {message}',
-           level='DEBUG', rotation='200 KB')
+           level='DEBUG', rotation='100 KB')
 logger.add(sys.stderr, level='INFO')
 
 def pytest_addoption(parser):
@@ -50,7 +50,7 @@ def browser(request, headless):
         browser = webdriver.Chrome(options=options)
     elif browser_name == 'firefox':
         print()
-        logger.info('\nStart firefox for test...')
+        logger.info(f'Start firefox for "{request.node.name}"...')
         options = OptionsFirefox()
         if headless:
             options.add_argument('--headless')

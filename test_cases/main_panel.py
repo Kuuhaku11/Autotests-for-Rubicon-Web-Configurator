@@ -4,7 +4,7 @@ from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLoca
                       RS_485_SettingsLocators, AddressableLoopSettingsLocators)
 from selenium.common.exceptions import StaleElementReferenceException
 from loguru import logger
-import pyautogui
+import keyboard
 import os
 from time import sleep
 
@@ -181,17 +181,17 @@ class MainPanel(Page):  # Класс для тестирования по тес
         assert self.is_element_present(*MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING), \
             'Button "ИЗ ППК" does not blink'
 
-    def check_unload(self):
+    def check_unload(self, m1_wait, m2_wait, m3_wait):
         logger.info(f'Checking start and finish of unloading for ppk and moduls...')
         assert self.is_element_present(*SystemObjectsLocators.UNLOAD_START), \
             f'Unload for all ppkr has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 10), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 5), \
             f'Unload for module 1 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, 60), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, m1_wait), \
             f'Unload for module 2 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, 60), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, m2_wait), \
             f'Unload for module 3 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, 60), \
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, m3_wait), \
             f'Unload for all ppkr has not finished or there is a spelling error'
 
 
@@ -934,7 +934,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         logger.info(f'Click on the confirm button')
         prompt = self.browser.switch_to.alert
         prompt.accept()
-        sleep(0.1)
+        sleep(0.1)  # Без задержки не успевает создать файл
 
 
 # Проверка кнопки "в файл для Интеллекта"
@@ -952,6 +952,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 # Проверка кнопки "из файла"
     def click_from_file_button(self):
         logger.info(f'Click from file button')
+        sleep(1)  # f
         self.browser.find_element(*MainPanelLocators.FROM_FILE_BUTTON).click()
 
     def load_configuration_from_file(self):
@@ -959,15 +960,11 @@ class MainPanel(Page):  # Класс для тестирования по тес
         try:
             file_path = r'C:\Users\ITV\Downloads\config.json'
             assert os.path.exists(file_path), f'Configuration file not found: "{file_path}"'
+            keyboard.write(file_path)
+            keyboard.send('enter')
             sleep(0.5)
-            pyautogui.write(file_path)
-            logger.success(file_path)
-            sleep(5)
-            pyautogui.press('enter')
-            sleep(5)
         except:  # При ошибке, закрыть диалоговое окно windows
-            sleep(1)
-            pyautogui.click(pyautogui.locateCenterOnScreen('images/cancel_button.png', minSearchTime=1))
+            keyboard.press_and_release('esc')
 
     def delete_config_file(self):
         logger.info(f'Deleting a configuration file...')

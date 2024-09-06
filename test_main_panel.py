@@ -249,7 +249,7 @@ def undoad_setting(page):
     page.open()
     page.open_terminal()
     page.unload_settings()  # Выгрузка настроек из ППК
-    page.check_unload()  # Проверка выгрузки (сообщения о начале и окончании выгрузки всех модулей)
+    page.check_unload((areas + inlinks + outlinks) * 2, BIS_Ms * 2, addr_devs * 3)  # Проверка выгрузки
     page.close_terminal()
 
 
