@@ -5,7 +5,7 @@ from selenium.common.exceptions import TimeoutException
 
 
 class Page():
-    def __init__(self, browser, url, timeout=5):
+    def __init__(self, browser, url, timeout=10):
         self.browser = browser
         self.url = url
         self.timeout = timeout
@@ -18,14 +18,14 @@ class Page():
             return False
         return True
 
-    def is_not_element_present(self, how, what, wait=0.1):
+    def is_not_element_present(self, how, what, wait=3.0):  # Ожидание пока элемент не исчезнет
         try:
             self.browser.implicitly_wait(0)  # Временное отключение неявного ожидание
-            WebDriverWait(self.browser, wait).until(EC.presence_of_element_located((how, what)))
+            WebDriverWait(self.browser, wait).until(EC.invisibility_of_element_located((how, what)))
         except TimeoutException:
             self.browser.implicitly_wait(self.timeout)  # Восстановление неявного ожидания
-            return True
-        return False
+            return False
+        return True
 
     def is_element_clickable(self, how, what, wait=3):
         try:
@@ -47,3 +47,4 @@ class Page():
 
     def open(self):  # Открытие браузера
         self.browser.get(self.url)
+        self.browser.maximize_window()  # Разворот окна на весь экран

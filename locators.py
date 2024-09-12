@@ -6,7 +6,8 @@ class MainPanelLocators():
     TO_PPK_BUTTON = (By.CLASS_NAME, 'css-1661jj0')
     TO_PPK_BUTTON_IS_BLINKING = (By.CLASS_NAME, 'css-638ncg')
     FROM_PPK_BUTTON = (By.ID, 'read_config_from_ppk')
-    FROM_PPK_BUTTON_IS_BLINKING = (By.CLASS_NAME, 'css-1poz9ah')
+    FROM_PPK_BUTTON_IS_BLINKING_DARK = (By.CLASS_NAME, 'css-1poz9ah')
+    FROM_PPK_BUTTON_IS_BLINKING_LIGHT = (By.CLASS_NAME, 'css-1uq7s6e')
     SAVE_BUTTON = (By.ID, 'save_config_to_local_storage')
     RESTORE_BUTTON = (By.ID, 'restore_config_from_local_storage')
     RESTORE_MESSAGE = (By.ID, 'mui-2')
@@ -17,10 +18,18 @@ class MainPanelLocators():
     TERMINAL_BUTTON = (By.ID, 'terminal_open')
     CLOSE_TERMINAL_ARROW = (By.ID, 'terminal_close')
     LIGHT_MODE_ICON = (By.CSS_SELECTOR, '[data-testid="LightModeIcon"]')
+    DARK_MODE_ICON = (By.CSS_SELECTOR, '[data-testid="NightlightIcon"]')
     ONLINE_MARK = (By.ID, 'online_mark')
     OFFLINE_MARK = (By.CLASS_NAME, 'css-1qv5po9')
     TERMINAL_FORM = (By.CLASS_NAME, 'MuiDrawer-paperAnchorRight')
     CLOSE_EXPANDED_TABS_BUTTON = (By.ID, 'close_expanded_tabs')
+    @staticmethod
+    def TERMINAL_ITEMS(mess_num): return (By.CSS_SELECTOR, f'.css-1jrxq1v >p:nth-child({mess_num})')
+    @staticmethod
+    def CREATE_MESSAGE(object): return (By.XPATH, f'//p[contains(text(), " - created ППК-Р#1.{object}")]')
+    @staticmethod
+    def MODULE_CLEANING_MESSAGE(module): return (By.XPATH,
+        f'//p[contains(text(), " - ППК-Р#1.{module}  Очистка конфигурации в устройстве")]')
 
 
 class SystemObjectsLocators():
@@ -74,6 +83,7 @@ class SystemObjectsLocators():
     @staticmethod
     def DELETE_ADDRESSABLE_DEVICES(AL): return (By.ID, f'delete_group_1_Box_Module_3_AL_{AL}_AU')
 
+    UNIT_MENU_CONFIG = (By.ID, 'unit-menu-config')
     SELECT_TYPE_ICON = (By.CSS_SELECTOR, '.css-sckop7 span')
     @staticmethod
     def TYPES(num): return (By.CSS_SELECTOR, f'.css-r8u8y9 :nth-child({num})')
@@ -84,7 +94,7 @@ class SystemObjectsLocators():
     SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_Area_1_ .css-1fsho2b')
 
     @staticmethod
-    def RECORD_START(module): return (By.XPATH, f'//p[contains(text(), "- в ППК ППК-Р#1{module}")]')
+    def RECORD_START(module): return (By.XPATH, f'//p[contains(text(), "- в ППК ППК-Р#1.{module}")]')
     RECORD_FINISH = (By.XPATH, '//p[contains(text(), " - stop sending to PPK: done uploading")]')
 
     UNLOAD_START = (By.XPATH, '//p[contains(text(), " - start read CFG from ALL PPKR")]')
@@ -95,6 +105,8 @@ class SystemObjectsLocators():
     UNLOAD_START_MODULE_3 = (By.XPATH, 
         '//p[contains(text(), " - start read CFG from ППК-Р#1.Модуль#3(Адресные шлейфы)")]')
     UNLOAD_FINISH = (By.XPATH, '//p[contains(text(), " - stop read CFG from ALL PPKR")]')
+
+    CLEAR_MODULE_BUTTON = (By.CLASS_NAME, 'css-174aos4')
 
 
 class AreaSettingsLocators():

@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.firefox.options import Options as OptionsFirefox
 from loguru import logger
 import sys
+import time
 
 
 #  Все логи записываются в "test_log.log", но начало и окончание тестов не отображаются в терминале
@@ -18,22 +19,28 @@ def pytest_addoption(parser):
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_sessionstart():  # Выполняется перед началом всех тестов
-    logger.debug("=== НАЧАЛО ТЕСТОВ ===")
+def pytest_sessionstart(session):  # Выполняется перед началом всех тестов
+    logger.debug('=== НАЧАЛО ТЕСТОВ ===')
+    session.start_time = time.time()
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_sessionfinish():  # Выполняется после окончания всех тестов
-    logger.debug("=== ЗАВЕРШЕНИЕ ТЕСТОВ ===\n\n\n")
+def pytest_sessionfinish(session):  # Выполняется после окончания всех тестов
+    time_sec = int(time.time() - session.start_time)
+    time_result = f'{time_sec // 3600}:{time_sec % 3600 // 60}:{time_sec % 60}'
+    logger.debug(f'=== ЗАВЕРШЕНИЕ ТЕСТОВ ({time_result}) ===\n\n\n')
 
 
-def pytest_runtest_makereport(call):
+@pytest.hookimpl()
+def pytest_runtest_makereport(call, item):
     """Хук, который вызывается после выполнения каждого теста.
     Используется для обработки результатов тестов и логгирования assert ошибок.
     """
     if call.when == 'call':  # Проверяет выполнен ли тест
         if call.excinfo is not None:  # Проверяет есть ли информация в ошибке
             logger.error(call.excinfo.value)
+            browser = item.funcargs.get('browser')
+            browser.save_screenshot(f'screenshots/{item.name[:-7]}_{time.strftime('%H-%M-%S_%d.%m.%Y')}.png')
         logger.info('Quit browser...\n')
 
 

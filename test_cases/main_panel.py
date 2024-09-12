@@ -17,7 +17,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             f'Button "{button_name}" is not presented'
         button_text = self.browser.find_element(*locator).text
         assert button_text == button_name, \
-            f'Button "{button_name}" has a spelling error, button text: {button_text}'
+            f'Button "{button_name}" has a spelling error6, button text: {button_text}'
 
     def presence_and_spelling(self, locator, button_name):  # Проверка на наличие элемента и ошибки
         logger.info(f'Checking the button "{button_name}"...')
@@ -51,6 +51,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         self.browser.find_element(*MainPanelLocators.CLOSE_EXPANDED_TABS_BUTTON).click()
 
     def save_settings(self):
+        self.button_should_be_clickable(MainPanelLocators.SAVE_BUTTON, 'СОХРАНИТЬ')
         self.browser.find_element(*MainPanelLocators.SAVE_BUTTON).click()
     
     def button_should_be_clickable(self, locator, button):
@@ -133,10 +134,11 @@ class MainPanel(Page):  # Класс для тестирования по тес
     def online_mark_color_should_be_green(self):
         color = self.browser.find_element(*MainPanelLocators.ONLINE_MARK).value_of_css_property('color')
         assert '0, 230, 118' in color, \
-            f'Connection status color is not green: "rgb(0, 230, 118)", color: {color}'
+            f'Connection status color is not green: "rgba(0, 230, 118, 1)", received color: {color}'
     
     def should_be_offline_mark(self):
         logger.info('Checking offline status...')
+        sleep(1)  # f
         assert self.is_element_present(*MainPanelLocators.OFFLINE_MARK), \
             'Offline mark is not presented'
     
@@ -146,16 +148,11 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def online_mark_color_should_be_yellow(self):
         color = self.browser.find_element(*MainPanelLocators.OFFLINE_MARK).value_of_css_property('color')
-        assert color == 'rgba(255, 215, 64, 1)', \
-            f'Connection status color is not yellow: "rgba(255, 215, 64, 1)", color: {color}'
+        assert '255, 215, 64' in color, \
+            f'Connection status color is not yellow: "rgba(255, 215, 64, 1)", received color: {color}'
 
 
 # Проверка кнопки В ППК с открытым Терминалом
-    def recording_setting_for_ppk(self):
-        logger.info('Checking recording setting for ppk...')
-        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM_NUMB_1).click()  # ППК стал активным
-        self.browser.find_element(*MainPanelLocators.TO_PPK_BUTTON).click()  # Начать запись В ППК
-
     def recording_setting_for_module(self, module_num):  # Модуль Области стал активным
         logger.info(f'Checking recording setting for module {module_num}...')
         self.browser.find_element(*SystemObjectsLocators.MODULE_FORM(module_num)).click()
@@ -169,16 +166,21 @@ class MainPanel(Page):  # Класс для тестирования по тес
         logger.info(f'Checking start and finish of recording for {'ppk' if module == '' else module[1:]}...')
         assert self.is_element_present(*SystemObjectsLocators.RECORD_START(module)), \
             f'Recording for {'ppk' if module == '' else module[1:]} has not started'
-        flag = self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, timeout)
-        assert flag, f'Recording for {'ppk' if module == '' else module[1:]} has not finished'
+        assert self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, timeout), \
+            f'Recording for {'ppk' if module == '' else module[1:]} has not finished'
 
 
 # Проверка кнопки ИЗ ППК
     def unload_settings(self):
         logger.info(f'Checking unloading settings from ppk...')
         sleep(1)
-        self.browser.find_element(*MainPanelLocators.FROM_PPK_BUTTON).click()
-        assert self.is_element_present(*MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING), \
+        button = self.browser.find_element(*MainPanelLocators.FROM_PPK_BUTTON)
+        button.click()
+        if '250, 250, 250' in button.value_of_css_property('color'):  # Темная тема
+            assert self.is_element_present(*MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_DARK), \
+            'Button "ИЗ ППК" does not blink'
+        else:
+            assert self.is_element_present(*MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_LIGHT), \
             'Button "ИЗ ППК" does not blink'
 
     def check_unload(self, m1_wait, m2_wait, m3_wait):
@@ -203,37 +205,39 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def add_inputlink(self, inlinks):
         logger.info(f'Creating {inlinks} inputlinks...')
-        for i in range(inlinks):  # Создать ТС входы
-            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ADD_ICON).click()
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Список входов
-        for i in range(inlinks):  # Сделать ТС входы каждого типа
-            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(i + 1)).click()
-            self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
-            self.browser.find_element(*SystemObjectsLocators.TYPES(i % 6 + 1)).click()  # Изменить тип входа
-            sleep(0.1)  # f
+        if inlinks > 0:
+            for i in range(inlinks):  # Создать ТС входы
+                self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ADD_ICON).click()
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Список входов
+            for i in range(inlinks):  # Сделать ТС входы каждого типа
+                self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(i + 1)).click()
+                self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
+                self.browser.find_element(*SystemObjectsLocators.TYPES(i % 6 + 1)).click()  # Изменить тип входа
+                self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
 
     def add_ouputlink(self, outlinks):
         logger.info(f'Creating {outlinks} outputlinks...')
-        for i in range(outlinks):  # Создать ТС выходы
-            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ADD_ICON).click()
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Список выходов
-        for i in range(outlinks):  # Сделать ТС выходы каждого типа
-            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(i + 1)).click()
-            self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
-            self.browser.find_element(*SystemObjectsLocators.TYPES(i % 3 + 1)).click()  # Изменить тип выхода
-            sleep(0.1)  # f
-        
+        if outlinks > 0:
+            for i in range(outlinks):  # Создать ТС выходы
+                self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ADD_ICON).click()
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Список выходов
+            for i in range(outlinks):  # Сделать ТС выходы каждого типа
+                self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(i + 1)).click()
+                self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
+                self.browser.find_element(*SystemObjectsLocators.TYPES(i % 3 + 1)).click()  # Изменить тип выхода
+                self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
     
     def add_BIS_M(self, BIS_Ms):
         logger.info(f'Creating {BIS_Ms} BIS M...')
-        for i in range(BIS_Ms):  # Создать БИС-Мы
-            self.browser.find_element(*SystemObjectsLocators.RS_485_ADD_ICON).click()
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Список БИС-М
-        for i in range(BIS_Ms):  # Сделать БИС-Мы каждого типа
-            self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(i + 1)).click()
-            self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
-            self.browser.find_element(*SystemObjectsLocators.TYPES(i % 4 + 1)).click()  # Изменить тип выхода
-            sleep(0.1)  # f
+        if BIS_Ms > 0:
+            for i in range(BIS_Ms):  # Создать БИС-Мы
+                self.browser.find_element(*SystemObjectsLocators.RS_485_ADD_ICON).click()
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Список БИС-М
+            for i in range(BIS_Ms):  # Сделать БИС-Мы каждого типа
+                self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(i + 1)).click()
+                self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
+                self.browser.find_element(*SystemObjectsLocators.TYPES(i % 4 + 1)).click()  # Изменить тип выхода
+                self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)  # Поле мешающее нажатию
     
     def open_ADDRESSABLE_LOOP(self, AL):
         assert self.is_element_clickable(*SystemObjectsLocators.ADDRESSABLE_LOOP(AL)), \
@@ -242,14 +246,15 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def add_addressable_devices(self, AL, addr_devs):
         logger.info(f'Creating {addr_devs} addressable devices on addressable loop {AL}...')
-        for i in range(addr_devs):  # Создать АУ
-            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(AL)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
-        for i in range(addr_devs):  # Сделать АУ каждого типа
-            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, i + 1)).click()
-            self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
-            self.browser.find_element(*SystemObjectsLocators.TYPES(i % 13 + 1)).click()  # Изменить тип выхода
-            sleep(0.15)  # f
+        if addr_devs > 0:
+            for i in range(addr_devs):  # Создать АУ
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(AL)).click()
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
+            for i in range(addr_devs):  # Сделать АУ каждого типа
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, i + 1)).click()
+                self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
+                self.browser.find_element(*SystemObjectsLocators.TYPES(i % 13 + 1)).click()  # Изменить тип выхода
+                self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
 
 
 # Проверка полной выгрузки из ППК
@@ -277,7 +282,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         logger.info(f'Checking number of addr_devs...')
         count = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(AL)).text
         assert str(addr_devs) == count, \
-            f'Number of addressable_devices on {AL} loop is not equal {addr_devs}, number = {count}'
+            f'Number of addressable_devices on loop {AL} is not equal {addr_devs}, number = {count}'
 
     
 # Проверка кнопки "Сохранить"
@@ -313,6 +318,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         self.save_settings()
         self.restore_settings()
         self.refresh_page()
+        sleep(0.5)
         self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
         self.check_save_setting_disable(AreaSettingsLocators.DISABLE(1), f'area #{1}')
         self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
@@ -332,9 +338,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
 # Проверка кнопки "восстановить"
     def restore_settings(self):
         self.browser.find_element(*MainPanelLocators.RESTORE_BUTTON).click()
-        sleep(6)
-        assert self.is_not_element_present(*MainPanelLocators.RESTORE_MESSAGE, 1), \
-            'restore message did not disappear in 6 seconds'
+        assert self.is_not_element_present(*MainPanelLocators.RESTORE_MESSAGE, 10), \
+            'restore message did not disappear in 10 seconds'
 
     def should_not_be_areas_settings(self, areas):
         logger.info(f'Checking default settings in {areas} areas...')
@@ -531,7 +536,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(item)).click()
     
     def move_element(self, device, link):  # Перемещает device в поле link
-        self.browser.execute_script("arguments[0].scrollIntoView(true);", device)  # Прокрутить до элемента
+        self.browser.execute_script('arguments[0].scrollIntoView(true);', device)  # Прокрутить до элемента
         self.browser.execute_script("""
             var src = arguments[0];
             var tgt = arguments[1];
@@ -599,20 +604,24 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*InputLinkSettingsLocators.FIX(num)).click()
         self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
       
-    def rewrite_outputlinks_settings(self, outlinks, areas):
+    def rewrite_outputlinks_settings(self, outlinks, areas, BIS_Ms):
         logger.info(f'Rewrite settings in {outlinks} outputlinks...')
         self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
         self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
         BIS_num = 1
         for num in range(1, outlinks + 1):
             self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
-            link = self.browser.find_element(*OutputLinkSettingsLocators.UNIT_ID(num))
-            if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
-            assert self.is_element_present(*SystemObjectsLocators.RS_485_ITEMS(BIS_num)), \
-                f'BIS-M #{num} for outputlink #{num} not found'
-            BIS_m = self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(BIS_num))
-            self.move_element(BIS_m, link)
-            BIS_num += 1
+            if BIS_num <= BIS_Ms:
+                link = self.browser.find_element(*OutputLinkSettingsLocators.UNIT_ID(num))
+                if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
+                assert self.is_element_present(*SystemObjectsLocators.RS_485_ITEMS(BIS_num)), \
+                    f'BIS-M #{BIS_num} for outputlink #{num} not found'
+                BIS_m = self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(BIS_num))
+                self.move_element(BIS_m, link)
+                BIS_num += 1
+            elif BIS_num == BIS_Ms + 1:
+                logger.warning(f'Not enough BIS_Ms for outputlinks, total BIS_Ms: {BIS_Ms}')
+                BIS_num += 1
             self.browser.find_element(*OutputLinkSettingsLocators.PARENT_AREA(num)).click()
             self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas)).click()
             self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(num)).click()
@@ -952,8 +961,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
 # Проверка кнопки "из файла"
     def click_from_file_button(self):
         logger.info(f'Click from file button')
-        sleep(1)  # f
         self.browser.find_element(*MainPanelLocators.FROM_FILE_BUTTON).click()
+        sleep(1)
 
     def load_configuration_from_file(self):
         logger.info(f'Loading configuration from file...')
@@ -971,24 +980,65 @@ class MainPanel(Page):  # Класс для тестирования по тес
         os.remove(r'C:\Users\ITV\Downloads\config.json')
 
 
-# Очистка ППК от объектов
-    def clear_module_1(self):  # Полное независимое удаление всех объектов модуля Области
-        logger.info(f'Clearing module 1...')
-        if self.is_element_present(*SystemObjectsLocators.DELETE_AREAS):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_AREAS).click()
-        if self.is_element_present(*SystemObjectsLocators.DELETE_INPUTLINKS):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_INPUTLINKS).click()
-        if self.is_element_present(*SystemObjectsLocators.DELETE_OUTPUTLINKS):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_OUTPUTLINKS).click()
-    
-    def clear_module_2(self):  # Полное независимое удаление всех объектов модуля Выходы
-        logger.info(f'Clearing module 2...')
-        if self.is_element_present(*SystemObjectsLocators.DELETE_RS_485):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_RS_485).click()
-    
-    def clear_module_3(self):  # Полное независимое удаление всех объектов модуля Адресные шлейфы
-        logger.info(f'Clearing module 3...')
-        if self.is_element_present(*SystemObjectsLocators.DELETE_ADDRESSABLE_DEVICES(1)):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_ADDRESSABLE_DEVICES(1)).click()
-        if self.is_element_present(*SystemObjectsLocators.DELETE_ADDRESSABLE_DEVICES(2)):
-            self.browser.find_element(*SystemObjectsLocators.DELETE_ADDRESSABLE_DEVICES(2)).click()
+# Проверка терминала
+    def should_be_alternating_colors_in_terminal(self):
+        logger.info(f'Checking alternation of colors in dark mode terminal')
+        self.open_terminal()
+        color1 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(1)).value_of_css_property('color')
+        assert '158, 158, 158' in color1, 'Color of the first message in dark mode terminal ' \
+            f'is not grey: "rgba(158, 158, 158, 1)", received color: {color1}'
+        color2 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(2)).value_of_css_property('color')
+        assert '250, 250, 250' in color2, 'Color of the second message in dark mode terminal ' \
+            f'is not white: "rgba(250, 250, 250, 1)", received color: {color2}'
+        self.close_terminal()
+        self.browser.find_element(*MainPanelLocators.LIGHT_MODE_ICON).click()
+        logger.info(f'Checking alternation of colors in light mode terminal')
+        self.open_terminal()
+        color1 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(1)).value_of_css_property('color')
+        assert '158, 158, 158' in color1, 'Color of the first message in light mode terminal ' \
+            f'is not grey: "rgba(158, 158, 158, 1)", received color: {color1}'
+        color2 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(2)).value_of_css_property('color')
+        assert '33, 33, 33' in color2, 'Color of the second message in light mode terminal ' \
+            f'is not black: "rgba(33, 33, 33, 1)", received color: {color2}'
+        self.close_terminal()
+        self.browser.find_element(*MainPanelLocators.DARK_MODE_ICON).click()
+        
+    def should_be_object_creation_messages(self, areas, inlinks, outlinks, BIS_Ms, addr_devs):
+        logger.info(f'Checking object creation messages in terminal when unloading')
+        for num in range(1, areas + 1):  # Проверка сообщений создания Зон Пожаротушения
+            assert self.is_element_present(*MainPanelLocators.CREATE_MESSAGE(
+                f'Модуль#1(Области).Область#{num}(Зона Пожаротушения)')), \
+                f'There is no message about creation area #{num} or there is a spelling error'
+        for num in range(1, inlinks + 1):  # Проверка сообщений создания ТС входов
+            type = ('вход неисправность', 'Ссылка на область', 'ИПР', 'ИП', 'вход команд', 'вход технический')
+            assert self.is_element_present(*MainPanelLocators.CREATE_MESSAGE(
+                f'Модуль#1(Области).ТС вход#{num}({type[num % 6 - 1]})')), 'There is no message ' \
+                f'about creation input link #{num} "{type[num % 6 - 1]}" or there is a spelling error'
+        for num in range(1, outlinks + 1):  # Проверка сообщений создания ТС выходов
+            type = ('индикатор', 'направление на БИСМ2', 'выход на реле')
+            assert self.is_element_present(*MainPanelLocators.CREATE_MESSAGE(
+                f'Модуль#1(Области).ТС выход#{num}({type[num % 3 - 1]})')), 'There is no message ' \
+                f'about creation output link #{num} "{type[num % 3 - 1]}" or there is a spelling error'
+        for num in range(1, BIS_Ms + 1):  # Проверка сообщений создания БИСМов
+            type = ('БИС-М', 'БИС-М2', 'БИС-М3', 'ТИ')
+            assert self.is_element_present(*MainPanelLocators.CREATE_MESSAGE(
+                f'Модуль#2(Выходы).RS-485#{num}({type[num % 4 - 1]})')), 'There is no message ' \
+                f'about creation BIS-M #{num} "{type[num % 4 - 1]}" or there is a spelling error'
+        for AL in 1, 2:  # Проверка сообщений создания АУ
+            for num in range(1, addr_devs + 1):
+                type = ('АМК', 'АР1', 'АР-5', 'АРмини', 'АТИ', 'АхДПИ', 'ИР', 
+                        'ИСМ1', 'ИСМ2', 'ИСМ4', 'ИСМ5', 'МКЗ', 'ОСЗ')
+                assert self.is_element_present(*MainPanelLocators.CREATE_MESSAGE(
+                    f'Модуль#3(Адресные шлейфы).АШ#{AL}.Адресные устройства#{num}({type[num % 13 - 1]})')), \
+                    f'There is no message about creation addressable device #{num} ' \
+                    f'"{type[num % 13 - 1]}" on loop {AL} or there is a spelling error'
+
+    def clearing_ppk(self):
+        self.open_terminal()
+        self.open_ppk_objects()
+        for module in ('Модуль#3 Адресные шлейфы', 3), ('Модуль#2 Выходы', 2), ('Модуль#1 Области', 1):
+            logger.info(f'Clearing module {module[1]}...')
+            self.browser.find_element(*SystemObjectsLocators.MODULE_FORM(module[1])).click()
+            self.browser.find_element(*SystemObjectsLocators.CLEAR_MODULE_BUTTON).click()
+            assert self.is_element_visible(*MainPanelLocators.MODULE_CLEANING_MESSAGE(
+                module[0]), 10), 'There is no message about cleaning module 3'

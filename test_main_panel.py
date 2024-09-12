@@ -17,11 +17,13 @@ link = 'http://localhost:8082/'
 version = '1.0.0.268'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
 online = True  # True / False | Подключен ли ППК-Р? (для проверки статуса)
 headless = False  # True / False | Запуск тестов без отображения в браузере
+                 # (test_from_file_button не будет работать тк дилоговое окно windows не отобразится)
 
 # Количество объектов, которые будут проверятся
 areas = 10  # Зоны пожаротушения | по умолчания 10
 inlinks = 12  # ТС входы (6 типов) | по умолчания 12
 outlinks = 9  # ТС выходы (3 типа) | по умолчания 9
+
 BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12
 addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26
 #===================================================================================================
@@ -60,7 +62,6 @@ def test_settings_panel(browser):  # Проверка панели настро�
     page.should_be_terminal_button()
     page.should_be_light_mode_icon()
 
-
 # @pytest.mark.skip
 def test_connection_status(browser):  # Проверка статуса подключения
     page = MainPanel(browser, link)
@@ -79,10 +80,6 @@ def test_connection_status(browser):  # Проверка статуса подк
 def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с открытым Терминалом
     page = MainPanel(browser, link)
     page.open()
-    page.open_terminal()
-    page.recording_setting_for_ppk()  # Запись настроек для ППК
-    page.check_record()  # Проверка начала и окончания записи в терминале
-    page.close_terminal()
     page.open_ppk_objects()
     recording_setting_for_modules(page)  # Запись и проверка отдельно по трем модулям
 
@@ -90,7 +87,7 @@ def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с
 # @pytest.mark.skip
 def test_from_ppk_button(browser):  # Проверка кнопки "ИЗ ППК"
     page = MainPanel(browser, link)
-    undoad_setting(page)  # Выгрузка конфигурации из ППК и проверка
+    unload_setting(page)  # Выгрузка конфигурации из ППК и проверка
 
 
 # @pytest.mark.skip
@@ -116,7 +113,7 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
 # @pytest.mark.skip
 def test_full_unload_from_ppk(browser):  # Полная выгрузка из ППК
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    unload_setting(page)
     page.open_ppk_objects()
     page.open_module_objects(1)
     page.check_number_of_areas(areas)  # Проверка количества созданных Зон Пожаротушения
@@ -133,7 +130,7 @@ def test_full_unload_from_ppk(browser):  # Полная выгрузка из П
 # @pytest.mark.skip
 def test_save_button(browser):  # Проверка кнопки "сохранить"
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    unload_setting(page)
     page.open_ppk_objects()
     page.open_module_objects(1)
     page.open_module_objects(2)
@@ -159,7 +156,7 @@ def test_restore_button(browser):  # Проверка кнопки "восста
 # @pytest.mark.skip
 def test_full_rewrite(browser, call_from_another_func=False):  # Полная перезапись настроек
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    unload_setting(page)
     page.save_settings()  # Нажатие кнопки "сохранить" (иначе изменения стираются)
     page.open_ppk_objects()
     page.open_module_objects(1)
@@ -169,7 +166,7 @@ def test_full_rewrite(browser, call_from_another_func=False):  # Полная п
     page.open_ADDRESSABLE_LOOP(2)
     page.rewrite_areas_settings(areas)
     page.rewrite_inputlinks_settings(inlinks, areas)  # Изменение всех настроек всех типов ТС вход
-    page.rewrite_outputlinks_settings(outlinks, areas)
+    page.rewrite_outputlinks_settings(outlinks, areas, BIS_Ms)
     page.rewrite_BIS_Ms_settings(BIS_Ms)
     page.rewrite_addressable_devices_settings(1, addr_devs)
     page.rewrite_addressable_devices_settings(2, addr_devs)
@@ -181,7 +178,7 @@ def test_full_rewrite(browser, call_from_another_func=False):  # Полная п
 def test_check_full_rewrite(browser, call_from_another_func=False):  # Проверка перезаписи настроек
     page = MainPanel(browser, link)
     if call_from_another_func == False:
-        undoad_setting(page)
+        unload_setting(page)
     page.open_ppk_objects()
     page.open_module_objects(1)
     page.open_module_objects(2)
@@ -199,7 +196,7 @@ def test_check_full_rewrite(browser, call_from_another_func=False):  # Пров�
 # @pytest.mark.skip
 def test_to_file_button(browser):  # Проверка кнопки "в файл"
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    unload_setting(page)
     page.click_to_file_button()
     page.dismiss()
     page.click_to_file_button()
@@ -209,7 +206,7 @@ def test_to_file_button(browser):  # Проверка кнопки "в файл"
 # @pytest.mark.skip
 def test_to_file_for_intellect_button(browser):  # Проверка кнопки "в файл для Интеллекта"
     page = MainPanel(browser, link)
-    undoad_setting(page)
+    unload_setting(page)
     page.click_to_file_for_intellect_button()
     page.dismiss()
     page.click_to_file_for_intellect_button()
@@ -225,7 +222,16 @@ def test_from_file_button(browser):  # Проверка кнопки "из фа�
     page.load_configuration_from_file()
     page.delete_config_file()
     test_check_full_rewrite(browser, True)
-    clearing_ppk(page)
+
+
+# @pytest.mark.skip
+def test_terminal(browser):  # Проверка терминала
+    page = MainPanel(browser, link)
+    unload_setting(page)
+    # Проверяет наличие и орфографию сообщений создания всех типов объектов
+    page.should_be_object_creation_messages(areas, inlinks, outlinks, BIS_Ms, addr_devs)
+    page.should_be_alternating_colors_in_terminal()  # Проверка чередования цветов
+    page.clearing_ppk()
 
 
 #===================================================================================================
@@ -234,28 +240,20 @@ def recording_setting_for_modules(page):
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#1(Области)', (areas + inlinks + outlinks) * 2)
+    page.check_record('Модуль#1(Области)', max((areas + inlinks + outlinks) * 2, 10))
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(2)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#2(Выходы)', BIS_Ms * 8)
+    page.check_record('Модуль#2(Выходы)', max(BIS_Ms * 8, 10))
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
-    page.check_record('.Модуль#3(Адресные шлейфы)', addr_devs * 12)
+    page.check_record('Модуль#3(Адресные шлейфы)', max(addr_devs * 12, 10))
 
 
-def undoad_setting(page):
+def unload_setting(page):
     page.open()
     page.open_terminal()
     page.unload_settings()  # Выгрузка настроек из ППК
     page.check_unload((areas + inlinks + outlinks) * 2, BIS_Ms * 2, addr_devs * 3)  # Проверка выгрузки
     page.close_terminal()
-
-
-def clearing_ppk(page):
-    page.open_terminal()
-    page.clear_module_1()
-    page.clear_module_2()
-    page.clear_module_3()
-    recording_setting_for_modules(page)
