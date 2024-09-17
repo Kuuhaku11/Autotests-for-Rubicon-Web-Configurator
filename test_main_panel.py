@@ -19,13 +19,14 @@ online = True  # True / False | Подключен ли ППК-Р? (для пр�
 headless = False  # True / False | Запуск тестов без отображения в браузере
                  # (test_from_file_button не будет работать тк дилоговое окно windows не отобразится)
 
-# Количество объектов, которые будут проверятся
-areas = 10  # Зоны пожаротушения | по умолчания 10
-inlinks = 12  # ТС входы (6 типов) | по умолчания 12
-outlinks = 9  # ТС выходы (3 типа) | по умолчания 9
+ppk_num = 2  # Количество подключенных ППК-Р
 
-BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12
-addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26
+# Количество объектов, которые будут проверятся
+areas = 10  # Зоны пожаротушения | по умолчания 10 | максимум 255
+inlinks = 12  # ТС входы (6 типов) | по умолчания 12 | максимум 511
+outlinks = 9  # ТС выходы (3 типа) | по умолчания 9 | максимум 511
+BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12 | максимум 15
+addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26 | максимум 255
 #===================================================================================================
 
 
@@ -58,7 +59,7 @@ def test_settings_panel(browser):  # Проверка панели настро�
     page.should_be_to_file_button()
     page.should_be_to_file_for_intellect_button()
     page.should_be_from_file_button()
-    page.should_be_log_button()
+    page.should_be_event_log_button()
     page.should_be_terminal_button()
     page.should_be_light_mode_icon()
 
@@ -74,7 +75,6 @@ def test_connection_status(browser):  # Проверка статуса подк
         page.should_be_offline_mark()
         page.status_should_be_offline()
         page.online_mark_color_should_be_yellow()
-
 
 # @pytest.mark.skip
 def test_to_ppk_button(browser):  # Проверка кнопки "В ППК" с открытым Терминалом
@@ -137,7 +137,7 @@ def test_save_button(browser):  # Проверка кнопки "сохрани�
     page.open_module_objects(3)
     page.open_ADDRESSABLE_LOOP(1)
     page.open_ADDRESSABLE_LOOP(2)
-    page.check_save_settings()
+    page.check_save_settings(areas, inlinks, outlinks, BIS_Ms, addr_devs)
 
 
 # @pytest.mark.skip
@@ -165,7 +165,7 @@ def test_full_rewrite(browser, call_from_another_func=False):  # Полная п
     page.open_ADDRESSABLE_LOOP(1)
     page.open_ADDRESSABLE_LOOP(2)
     page.rewrite_areas_settings(areas)
-    page.rewrite_inputlinks_settings(inlinks, areas)  # Изменение всех настроек всех типов ТС вход
+    page.rewrite_inputlinks_settings(inlinks, areas, addr_devs)  # Изменение всех настроек всех типов ТС вход
     page.rewrite_outputlinks_settings(outlinks, areas, BIS_Ms)
     page.rewrite_BIS_Ms_settings(BIS_Ms)
     page.rewrite_addressable_devices_settings(1, addr_devs)
@@ -186,8 +186,8 @@ def test_check_full_rewrite(browser, call_from_another_func=False):  # Пров�
     page.open_ADDRESSABLE_LOOP(1)
     page.open_ADDRESSABLE_LOOP(2)
     page.should_be_areas_settings(areas)
-    page.should_be_inputlinks_settings(inlinks, areas)
-    page.should_be_outputlinks_settings(outlinks, areas)
+    page.should_be_inputlinks_settings(inlinks, areas, addr_devs)
+    page.should_be_outputlinks_settings(outlinks, areas, BIS_Ms)
     page.should_be_BIS_Ms_settings(BIS_Ms)
     page.should_be_addressable_devices_settings(1, addr_devs)
     page.should_be_addressable_devices_settings(2, addr_devs)
@@ -234,26 +234,36 @@ def test_terminal(browser):  # Проверка терминала
     page.clearing_ppk()
 
 
+# @pytest.mark.skip
+def test_event_log(browser):  # Проверка журнала
+    page = MainPanel(browser, link)
+    page.open()
+    page.check_column_names()
+    page.check_button_to_display_number_of_events()
+    page.check_value_of_columns(ppk_num)
+    page.check_colors_of_the_button()
+
+
 #===================================================================================================
 def recording_setting_for_modules(page):
     page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты модут удалиться
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(1)  # Записать настройки для указанного модуля
-    page.check_record('Модуль#1(Области)', max((areas + inlinks + outlinks) * 2, 10))
+    page.check_record('Модуль#1(Области)', (areas + inlinks + outlinks) * 2)
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(2)  # Записать настройки для указанного модуля
-    page.check_record('Модуль#2(Выходы)', max(BIS_Ms * 8, 10))
+    page.check_record('Модуль#2(Выходы)', BIS_Ms * 8)
     page.refresh_page()
     page.open_terminal()
     page.recording_setting_for_module(3)  # Записать настройки для указанного модуля
-    page.check_record('Модуль#3(Адресные шлейфы)', max(addr_devs * 12, 10))
+    page.check_record('Модуль#3(Адресные шлейфы)', addr_devs * 12)
 
 
 def unload_setting(page):
     page.open()
     page.open_terminal()
     page.unload_settings()  # Выгрузка настроек из ППК
-    page.check_unload((areas + inlinks + outlinks) * 2, BIS_Ms * 2, addr_devs * 3)  # Проверка выгрузки
+    page.check_unload((areas + inlinks + outlinks) * 2, BIS_Ms * 2, addr_devs * 3)
     page.close_terminal()

@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.firefox.options import Options as OptionsFirefox
 from loguru import logger
 import sys
+import os
 import time
 
 
@@ -20,8 +21,10 @@ def pytest_addoption(parser):
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_sessionstart(session):  # Выполняется перед началом всех тестов
-    logger.debug('=== НАЧАЛО ТЕСТОВ ===')
+    for filename in os.listdir('screenshots'):  # Удаляет скрины падений прошлых тестов
+        os.remove(f'screenshots/{filename}')
     session.start_time = time.time()
+    logger.debug('=== НАЧАЛО ТЕСТОВ ===')
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -38,9 +41,9 @@ def pytest_runtest_makereport(call, item):
     """
     if call.when == 'call':  # Проверяет выполнен ли тест
         if call.excinfo is not None:  # Проверяет есть ли информация в ошибке
-            logger.error(call.excinfo.value)
             browser = item.funcargs.get('browser')
-            browser.save_screenshot(f'screenshots/{item.name[:-7]}_{time.strftime('%H-%M-%S_%d.%m.%Y')}.png')
+            browser.save_screenshot(f'screenshots/{time.strftime('%H-%M-%S_%d.%m.%Y')}_{item.name[:-7]}.png')
+            logger.error(call.excinfo.value)
         logger.info('Quit browser...\n')
 
 

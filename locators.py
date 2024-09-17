@@ -14,7 +14,7 @@ class MainPanelLocators():
     TO_FILE_BUTTON = (By.CSS_SELECTOR, '.MuiToolbar-root :nth-child(8)')
     TO_FILE_FOR_INTELLECT_BUTTON = (By.CSS_SELECTOR, '[aria-label="В Файл для Интеллекта"]')
     FROM_FILE_BUTTON = (By.CSS_SELECTOR, '.MuiToolbar-root :nth-child(10)')
-    LOG_BUTTON = (By.CSS_SELECTOR, '[data-testid="event_log"]')
+    EVENT_LOG_BUTTON = (By.CSS_SELECTOR, '[data-testid="event_log"]')
     TERMINAL_BUTTON = (By.ID, 'terminal_open')
     CLOSE_TERMINAL_ARROW = (By.ID, 'terminal_close')
     LIGHT_MODE_ICON = (By.CSS_SELECTOR, '[data-testid="LightModeIcon"]')
@@ -91,7 +91,14 @@ class SystemObjectsLocators():
     @staticmethod
     def DROP_DOWN_LIST(num): return (By.XPATH, f'//div[@role="presentation"]//*[{num}]')
 
-    SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_Area_1_ .css-1fsho2b')
+    AREA_SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_Area_1_ .css-1fsho2b')
+    INPUTLINK_SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_InputLink_1_ .css-1fsho2b')
+    OUTPUTLINK_SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_1_OutputLink_1_ .css-1fsho2b')
+    BIS_M_SAVE_ICON = (By.CSS_SELECTOR, '#id_item_1_Box_Module_2_SK_1_ .css-1fsho2b')
+    @staticmethod
+    def ADDRESSABLE_DEVICE_SAVE_ICON(AL): return (By.CSS_SELECTOR, 
+        f'#id_item_1_Box_Module_3_AL_{AL}_AU_1_ .css-1fsho2b')
+
 
     @staticmethod
     def RECORD_START(module): return (By.XPATH, f'//p[contains(text(), "- в ППК ППК-Р#1.{module}")]')
@@ -353,3 +360,16 @@ class AddressableLoopSettingsLocators():
     @staticmethod
     def MODE24_ARROW(AL, num):
         return (By.CSS_SELECTOR, f'#id_1_Box_Module_3_AL_{AL}_AU_{num}_mode24 + div')
+    
+
+class EventLogLocators():
+    @staticmethod
+    def NAME_COLUMN(num): return (By.XPATH, f'//tr//th[{num}]')
+
+    DATE_TIME = (By.XPATH, '//tr[1]//td[1]')
+    EVENT = (By.XPATH, '//tr[1]//td[2]')
+    ADDRESS = (By.XPATH, '//tr[1]//td[3]')
+    AREA = (By.XPATH, '//tr[1]//td[4]')
+
+    EVENTS_NUMBER = (By.ID, 'mui-4')
+    EVENTS_100 = (By.XPATH, '//li[3]')

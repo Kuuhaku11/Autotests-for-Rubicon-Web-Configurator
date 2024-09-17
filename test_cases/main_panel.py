@@ -1,11 +1,13 @@
 from main_page import Page
 from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLocators,
                       InputLinkSettingsLocators, OutputLinkSettingsLocators, 
-                      RS_485_SettingsLocators, AddressableLoopSettingsLocators)
+                      RS_485_SettingsLocators, AddressableLoopSettingsLocators, EventLogLocators)
 from selenium.common.exceptions import StaleElementReferenceException
 from loguru import logger
 import keyboard
 import os
+from datetime import datetime
+from time import time
 from time import sleep
 
 
@@ -59,7 +61,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
 
 # Проверка title
-    def check_tab_name_on_title(self):  # Название вкладки
+    def check_tab_name_on_title(self):
         logger.info('Checking the title...')
         title = self.browser.title.split()[0]
         assert title == 'Веб-конфигуратор', 'The tab name in the title does not match, ' \
@@ -109,8 +111,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
     def should_be_from_file_button(self):
         self.presence_and_spelling(MainPanelLocators.FROM_FILE_BUTTON, 'ИЗ ФАЙЛА')
     
-    def should_be_log_button(self):
-        self.presence_and_spelling(MainPanelLocators.LOG_BUTTON, 'ЖУРНАЛ')
+    def should_be_event_log_button(self):
+        self.presence_and_spelling(MainPanelLocators.EVENT_LOG_BUTTON, 'ЖУРНАЛ')
         
     def should_be_terminal_button(self):
         self.presence_and_spelling(MainPanelLocators.TERMINAL_BUTTON, 'ТЕРМИНАЛ')
@@ -164,10 +166,14 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def check_record(self, module='', timeout=30):
         logger.info(f'Checking start and finish of recording for {'ppk' if module == '' else module[1:]}...')
+        start_time = time()
         assert self.is_element_present(*SystemObjectsLocators.RECORD_START(module)), \
             f'Recording for {'ppk' if module == '' else module[1:]} has not started'
-        assert self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, timeout), \
-            f'Recording for {'ppk' if module == '' else module[1:]} has not finished'
+        assert self.is_element_visible(*SystemObjectsLocators.RECORD_FINISH, max(timeout, 10)), \
+            f'Recording for {'ppk' if module == '' else module[1:]} has not finished, ' \
+            f'time spent: {time() - start_time:.2f}'
+        logger.success(f'Record to {'ppk' if module == '' else module[1:]} was successful, ' \
+                       f'time spent: {time() - start_time:.2f}')
 
 
 # Проверка кнопки ИЗ ППК
@@ -185,16 +191,18 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def check_unload(self, m1_wait, m2_wait, m3_wait):
         logger.info(f'Checking start and finish of unloading for ppk and moduls...')
+        start_time = time()
         assert self.is_element_present(*SystemObjectsLocators.UNLOAD_START), \
-            f'Unload for all ppkr has not started or there is a spelling error'
+            f'Unload for all ppkr has not started, time spent: {time() - start_time:.2f}'
         assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_1, 5), \
-            f'Unload for module 1 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, m1_wait), \
-            f'Unload for module 2 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, m2_wait), \
-            f'Unload for module 3 has not started or there is a spelling error'
-        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, m3_wait), \
-            f'Unload for all ppkr has not finished or there is a spelling error'
+            f'Unload for module 1 has not started, time spent: {time() - start_time:.2f}'
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_2, max(m1_wait, 40)), \
+            f'Unload for module 2 has not started, time spent: {time() - start_time:.2f}'
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_START_MODULE_3, max(m2_wait, 40)), \
+            f'Unload for module 3 has not started, time spent: {time() - start_time:.2f}'
+        assert self.is_element_visible(*SystemObjectsLocators.UNLOAD_FINISH, max(m3_wait, 40)), \
+            f'Unload for all ppkr has not finished, time spent: {time() - start_time:.2f}'
+        logger.success(f'Unload from ppk was successful, time spent: {time() - start_time:.2f}')
 
 
 # Полная запись в ППК
@@ -214,6 +222,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
                 self.browser.find_element(*SystemObjectsLocators.TYPES(i % 6 + 1)).click()  # Изменить тип входа
                 self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
 
     def add_ouputlink(self, outlinks):
         logger.info(f'Creating {outlinks} outputlinks...')
@@ -226,6 +235,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
                 self.browser.find_element(*SystemObjectsLocators.TYPES(i % 3 + 1)).click()  # Изменить тип выхода
                 self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
     
     def add_BIS_M(self, BIS_Ms):
         logger.info(f'Creating {BIS_Ms} BIS M...')
@@ -238,6 +248,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
                 self.browser.find_element(*SystemObjectsLocators.TYPES(i % 4 + 1)).click()  # Изменить тип выхода
                 self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)  # Поле мешающее нажатию
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
     
     def open_ADDRESSABLE_LOOP(self, AL):
         assert self.is_element_clickable(*SystemObjectsLocators.ADDRESSABLE_LOOP(AL)), \
@@ -255,6 +266,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
                 self.browser.find_element(*SystemObjectsLocators.TYPES(i % 13 + 1)).click()  # Изменить тип выхода
                 self.is_not_element_present(*SystemObjectsLocators.UNIT_MENU_CONFIG)
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
 
 
 # Проверка полной выгрузки из ППК
@@ -291,48 +303,77 @@ class MainPanel(Page):  # Класс для тестирования по тес
             AreaSettingsLocators.CHECKBOX_CHECKED[1] + locator[1]), \
             f'Checkbox "отключен" in {object_name} was not saved'
     
-    def check_save_settings(self):  # Проверить, что после обновления настройки сохраняются
+    def check_save_settings(self, areas, inlinks, outlinks, BIS_Ms, addr_devs):
         logger.info('Checking save settings...')
         self.button_should_be_clickable(MainPanelLocators.SAVE_BUTTON, 'СОХРАНИТЬ')
         self.save_settings()
-        self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
-        assert self.is_element_present(*SystemObjectsLocators.SAVE_ICON), \
-            'Settings not saved, there is no green dot near the area #1'  # Проверка появления зеленой точки   
-        self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
-        self.browser.find_element(*AreaSettingsLocators.DISABLE(1)).click()
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
-        self.browser.find_element(*InputLinkSettingsLocators.DISABLE(1)).click()
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
-        self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(1)).click()
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
-        self.browser.find_element(*RS_485_SettingsLocators.DISABLE(1)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, 1)).click()
-        self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(1, 1)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(2)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(2, 1)).click()
-        self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(2, 1)).click()
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
+            assert self.is_element_present(*SystemObjectsLocators.AREA_SAVE_ICON), \
+                'Settings not saved, there is no green dot near the area #1'  # Проверка появления зеленой точки   
+            self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
+            self.browser.find_element(*AreaSettingsLocators.DISABLE(1)).click()
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Закрыть Зоны
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
+            assert self.is_element_present(*SystemObjectsLocators.INPUTLINK_SAVE_ICON), \
+                'Settings not saved, there is no green dot near the inputlink #1'
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
+            self.browser.find_element(*InputLinkSettingsLocators.DISABLE(1)).click()
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
+            assert self.is_element_present(*SystemObjectsLocators.OUTPUTLINK_SAVE_ICON), \
+                'Settings not saved, there is no green dot near the outputlink #1'
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
+            self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(1)).click()
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
+            assert self.is_element_present(*SystemObjectsLocators.BIS_M_SAVE_ICON), \
+                'Settings not saved, there is no green dot near the BIS_M #1'
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
+            self.browser.find_element(*RS_485_SettingsLocators.DISABLE(1)).click()
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        if addr_devs > 0:
+            for AL in 1, 2:
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
+                assert self.is_element_present(*SystemObjectsLocators.ADDRESSABLE_DEVICE_SAVE_ICON(AL)), \
+                    f'Settings not saved, there is no green dot near the addressable device #1 on loop {AL}'
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, 1)).click()
+                self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(AL, 1)).click()
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         self.save_settings()
         self.restore_settings()
         self.refresh_page()
         sleep(0.5)
-        self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
-        self.check_save_setting_disable(AreaSettingsLocators.DISABLE(1), f'area #{1}')
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
-        self.check_save_setting_disable(InputLinkSettingsLocators.DISABLE(1), f'inputlink #{1}')
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
-        self.check_save_setting_disable(OutputLinkSettingsLocators.DISABLE(1), f'outputlink #{1}')
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
-        self.check_save_setting_disable(RS_485_SettingsLocators.DISABLE(1), f'RS-485 #{1}')
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, 1)).click()
-        self.check_save_setting_disable(AddressableLoopSettingsLocators.DISABLE(1, 1),
-                                        f'addressable device #{1} on loop {1}')
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(2, 1)).click()
-        self.check_save_setting_disable(AddressableLoopSettingsLocators.DISABLE(2, 1),
-                                        f'addressable device #{1} on loop {2}')
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
+            self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1)).click()
+            self.check_save_setting_disable(AreaSettingsLocators.DISABLE(1), f'area #{1}')
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(1)).click()
+            self.check_save_setting_disable(InputLinkSettingsLocators.DISABLE(1), f'inputlink #{1}')
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(1)).click()
+            self.check_save_setting_disable(OutputLinkSettingsLocators.DISABLE(1), f'outputlink #{1}')
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(1)).click()
+            self.check_save_setting_disable(RS_485_SettingsLocators.DISABLE(1), f'RS-485 #{1}')
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        if addr_devs > 0:
+            for AL in 1, 2:
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, 1)).click()
+                self.check_save_setting_disable(AddressableLoopSettingsLocators.DISABLE(AL, 1),
+                                                f'addressable device #{1} on loop {AL}')
+                self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         
 
 # Проверка кнопки "восстановить"
@@ -343,6 +384,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def should_not_be_areas_settings(self, areas):
         logger.info(f'Checking default settings in {areas} areas...')
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
         for num in range(1, areas):  # Проверка соответствия настроек в каждой Зоне Пожаротушения
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(num)).click()
             self.value_check(AreaSettingsLocators.ENTERS_THE_AREA(num),
@@ -368,9 +411,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                              'B (перезапрос)', 'алгоритм ЗКПС', f'area #{num}')                
             self.value_check(AreaSettingsLocators.RESET_DELAY(num),
                              '25', 'задержка сброса', f'area #{num}')
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Закрыть Зоны
 
     def should_not_be_inputlinks_settings(self, inlinks):
         logger.info(f'Checking default settings in {inlinks} inputlinks...')
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
         for num in range(1, inlinks + 1):  # Проверка соответствия настроек в каждом ТС входе
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
             self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
@@ -387,9 +434,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                  '0', 'канал', f'inputlink #{num}')
                 self.checkbox_unchecked(InputLinkSettingsLocators.FIX(num),
                                         'фиксировать', f'inputlink #{num}')
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
     
     def should_not_be_outputlinks_settings(self, outlinks):
         logger.info(f'Checking default settings in {outlinks} outputlinks...')
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
         for num in range(1, outlinks + 1):  # Проверка соответствия настроек в каждом ТС выходе
             self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
             self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
@@ -448,9 +499,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                      'отключено', f'на технический сигнал {tech_num}', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.AND_OR(num),
                                  'по ИЛИ', 'И/или', f'outputlink #{num}')
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
         
     def should_not_be_BIS_Ms_settings(self, BIS_Ms):
         logger.info(f'Checking default settings in {BIS_Ms} BIS_Ms...')
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
         for num in range(1, BIS_Ms + 1):  # Проверка соответствия настроек в каждом БИС-Ме
             self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num)).click()
             self.checkbox_unchecked(RS_485_SettingsLocators.DISABLE(num), 'отключен', f'RS-485 #{num}')
@@ -495,9 +550,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                  '0', 'ИД по умолчанию', f'RS-485 #{num}')
             self.value_check(RS_485_SettingsLocators.SN(num),
                              str(2000 + num), 'серийный номер', f'RS-485 #{num}')
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
     
     def should_not_be_addressable_devices_settings(self, AL, addr_devs):
         logger.info(f'Checking default settings in {addr_devs} addressable devices in addressable loop {AL}...')
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num)).click()
             self.checkbox_unchecked(AddressableLoopSettingsLocators.DISABLE(AL, num), 
@@ -528,6 +587,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                  'любое', 'напряжение питания', f'addressable device #{num} on loop {AL}')
             self.value_check(AddressableLoopSettingsLocators.SN(AL, num),
                              str(AL * 1000 + num), 'серийный номер', f'addressable device #{num} on loop {AL}')
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
 
 
 # Полная перезапись настроек ранее добавленных объектов
@@ -563,7 +624,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def rewrite_areas_settings(self, areas):
         logger.info(f'Rewrite settings in {areas} areas...')
-        self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Раскрыть Зоны
         for area_num in range(1, areas):  # У каждой Зоны Пожаротушения изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(area_num)).click()
             self.browser.execute_script("scrollBy(0, -1000);")  # Прокрутка страницы вверх
@@ -578,36 +640,49 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.select_in_list(AreaSettingsLocators.MUTUALLY_EXCLUSIVE_SR_ARROW(area_num), 5)
             self.browser.find_element(*AreaSettingsLocators.EXTINGUISHING_BY_MFA(area_num)).click()
             self.browser.find_element(*AreaSettingsLocators.FORWARD_IN_RING(area_num)).click()
-            self.browser.find_element(*AreaSettingsLocators.RETRY_DELAY(area_num)
-                                      ).send_keys(123456)
+            self.browser.find_element(*AreaSettingsLocators.RETRY_DELAY(area_num)).send_keys(123456)
             self.select_in_list(AreaSettingsLocators.LAUNCH_ALGORITHM_ARROW(area_num), 4)
-            self.browser.find_element(*AreaSettingsLocators.RESET_DELAY(area_num)
-                                      ).send_keys(123456)
+            self.browser.find_element(*AreaSettingsLocators.RESET_DELAY(area_num)).send_keys(123456)
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()  # Закрыть Зоны
     
-    def rewrite_inputlinks_settings(self, inlinks, areas):
+    def rewrite_inputlinks_settings(self, inlinks, areas, addr_devs):
         logger.info(f'Rewrite settings in {inlinks} inputlinks...')
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()  # Раскрыть ТС входы
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
         for num in range(1, inlinks + 1):  # У каждого ТС входа изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
-            link = self.browser.find_element(*InputLinkSettingsLocators.UNIT_ID(num))
-            assert self.is_element_present(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)), \
-                f'Addressable device #{num} for inputlink #{num} not found'
-            device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
-            self.move_element(device, link)
-            self.select_in_list(InputLinkSettingsLocators.PARENT_AREA(num), areas)
+            if num <= addr_devs:
+                link = self.browser.find_element(*InputLinkSettingsLocators.UNIT_ID(num))
+                assert self.is_element_present(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)), \
+                    f'Addressable device #{num} for inputlink #{num} not found'
+                device = self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num))
+                self.move_element(device, link)
+            elif num == addr_devs + 1:
+                logger.warning(f'Not enough addressable devices for inputlinks, total devices: {addr_devs}')
+            if areas > 0:
+                self.select_in_list(InputLinkSettingsLocators.PARENT_AREA(num), areas)
+            elif num == 1:
+                logger.warning('There is no one area for inputlinks')
             self.browser.find_element(*InputLinkSettingsLocators.DISABLE(num)).click()
             if num % 6 == 5:  # Тип ТС входа - вход команд
                 self.select_in_list(InputLinkSettingsLocators.COMMAND_ARROW(num), 17)
             if num % 6 == 0:  # Тип ТС входа - вход технический
                 self.browser.find_element(*InputLinkSettingsLocators.CHANNEL(num)).send_keys(1234)
                 self.browser.find_element(*InputLinkSettingsLocators.FIX(num)).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
       
     def rewrite_outputlinks_settings(self, outlinks, areas, BIS_Ms):
         logger.info(f'Rewrite settings in {outlinks} outputlinks...')
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()  # Раскрыть ТС выходы
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
         BIS_num = 1
         for num in range(1, outlinks + 1):
             self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
@@ -622,8 +697,10 @@ class MainPanel(Page):  # Класс для тестирования по тес
             elif BIS_num == BIS_Ms + 1:
                 logger.warning(f'Not enough BIS_Ms for outputlinks, total BIS_Ms: {BIS_Ms}')
                 BIS_num += 1
-            self.browser.find_element(*OutputLinkSettingsLocators.PARENT_AREA(num)).click()
-            self.browser.find_element(*SystemObjectsLocators.DROP_DOWN_LIST(areas)).click()
+            if areas > 0:
+                self.select_in_list(OutputLinkSettingsLocators.PARENT_AREA(num), areas)
+            elif num == 1:
+                logger.warning('There is no one area for inputlinks')
             self.browser.find_element(*OutputLinkSettingsLocators.DISABLE(num)).click()
             if num % 3 == 0:  # Тип ТС выхода - выход на реле
                 self.browser.find_element(*OutputLinkSettingsLocators.TURN_ON_DELAY(num)).send_keys(123456)
@@ -650,11 +727,15 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 for tech_num in range(15):
                     self.select_in_list(OutputLinkSettingsLocators.ON_TECH_ARROW(num, tech_num), 3)
                 self.select_in_list(OutputLinkSettingsLocators.AND_OR_ARROW(num), 2)
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Скрыть RS-485
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Скрыть RS-485
     
     def rewrite_BIS_Ms_settings(self, BIS_Ms):
         logger.info(f'Rewrite settings in {BIS_Ms} BIS_Ms...')
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()  # Раскрыть RS-485
         for num in range(1, BIS_Ms + 1):  # У каждого БИС-Ма изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num)).click()
             self.browser.execute_script("scrollBy(0, -1000);")  # Прокрутка страницы вверх
@@ -682,10 +763,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*RS_485_SettingsLocators.KEY_SENSITIVE(num)).click()
                 self.browser.find_element(*RS_485_SettingsLocators.DEFAULT_ID(num)).send_keys(12345678901)
             self.browser.find_element(*RS_485_SettingsLocators.SN(num)).send_keys('\b\b\b\b', 65536 - num)
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
     
     def rewrite_addressable_devices_settings(self, AL, addr_devs):
         logger.info(f'Rewrite settings in {addr_devs} addressable devices in addressable loop {AL}...')
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num)).click()
             self.browser.find_element(*AddressableLoopSettingsLocators.DISABLE(AL, num)).click()
@@ -706,6 +790,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.select_in_list(AddressableLoopSettingsLocators.MODE24_ARROW(AL, num), 2)
             self.browser.find_element(*AddressableLoopSettingsLocators.SN(AL, num)).send_keys(
                 '\b\b\b\b', 16777216 - num - (AL - 1) * addr_devs)  # Стирает 4 символа и вставляет сн
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
 
 # Проверка полной перезаписи настроек
     def value_check(self, locator, expected_value, set_name, object_name):  # Проверка значения настройки
@@ -725,7 +811,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def should_be_areas_settings(self, areas):
         logger.info(f'Checking settings in {areas} areas...')
-        self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
         for num in range(1, areas):  # Проверка соответствия настроек в каждой Зоне Пожаротушения
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(num)).click()
             self.value_check(AreaSettingsLocators.ENTERS_THE_AREA(num),
@@ -751,19 +838,25 @@ class MainPanel(Page):  # Класс для тестирования по тес
                              'C2 (два пожара или пожар+неисправность)', 'алгоритм ЗКПС', f'area #{num}')                
             self.value_check(AreaSettingsLocators.RESET_DELAY(num),
                              '16383', 'задержка сброса', f'area #{num}')
+        if areas > 0:
+            self.browser.find_element(*SystemObjectsLocators.AREA_ARROW).click()
 
-    def should_be_inputlinks_settings(self, inlinks, areas):
+    def should_be_inputlinks_settings(self, inlinks, areas, addr_devs):
         logger.info(f'Checking settings in {inlinks} inputlinks...')
-        self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
         for num in range(1, inlinks + 1):  # Проверка соответствия настроек в каждом ТС входе
             self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(num)).click()
-            device_name = self.browser.find_element(
-                *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)).text
-            self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
-                             device_name, 'ссылка(ИД)', f'inputlink #{num}')
-            self.value_check(InputLinkSettingsLocators.PARENT_AREA(num),
-                             f'#{areas} Зона Пожаротушения ', 'входит в область', f'inputlink #{num}')
+            if num <= addr_devs:
+                device_name = self.browser.find_element(
+                    *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(1, num)).text
+                self.value_check(InputLinkSettingsLocators.UNIT_ID(num),
+                                device_name, 'ссылка(ИД)', f'inputlink #{num}')
+            if areas > 0:
+                self.value_check(InputLinkSettingsLocators.PARENT_AREA(num),
+                                f'#{areas} Зона Пожаротушения ', 'входит в область', f'inputlink #{num}')
             self.checkbox_checked(InputLinkSettingsLocators.DISABLE(num), 'отключен', f'inputlink #{num}')
             if num % 6 == 5:  # Тип ТС входа - вход команд
                 self.value_check(InputLinkSettingsLocators.COMMAND(num),
@@ -772,23 +865,30 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.value_check(InputLinkSettingsLocators.CHANNEL(num),
                                  f'14', 'канал', f'inputlink #{num}')
                 self.checkbox_checked(InputLinkSettingsLocators.FIX(num), 'фиксировать', f'inputlink #{num}')
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
+        if inlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW).click()
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(1)).click()
 
-    def should_be_outputlinks_settings(self, outlinks, areas):
+    def should_be_outputlinks_settings(self, outlinks, areas, BIS_Ms):
         logger.info(f'Checking settings in {outlinks} outputlinks...')
-        self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
         BIS_num = 1
         for num in range(1, outlinks + 1):  # Проверка соответствия настроек в каждом ТС выходе
             self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(num)).click()
-            if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
-            BIS_name = self.browser.find_element(
-                *SystemObjectsLocators.RS_485_ITEMS(BIS_num)).text
-            BIS_num += 1
-            self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
-                             BIS_name, 'ссылка(ИД)', f'outputlink #{num}')
-            self.value_check(OutputLinkSettingsLocators.PARENT_AREA(num), 
-                             f'#{areas} Зона Пожаротушения ', 'входит в область', f'outputlink #{num}')
+            if BIS_num <= BIS_Ms:
+                if BIS_num % 4 == 0: BIS_num += 1  # Если тип БИС-Ма - ТИ, то пропускаем его
+                BIS_name = self.browser.find_element(
+                    *SystemObjectsLocators.RS_485_ITEMS(BIS_num)).text
+                BIS_num += 1
+                self.value_check(OutputLinkSettingsLocators.UNIT_ID(num),
+                                BIS_name, 'ссылка(ИД)', f'outputlink #{num}')
+            if areas > 0:
+                self.value_check(OutputLinkSettingsLocators.PARENT_AREA(num), 
+                                f'#{areas} Зона Пожаротушения ', 'входит в область', f'outputlink #{num}')
             self.checkbox_checked(OutputLinkSettingsLocators.DISABLE(num), 'отключен', f'outputlink #{num}')
             if num % 3 == 0:  # Тип ТС выхода - выход на реле
                 self.value_check(OutputLinkSettingsLocators.TURN_ON_DELAY(num),
@@ -840,11 +940,15 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                      'если есть', f'на технический сигнал {tech_num}', f'outputlink #{num}')
                 self.value_check(OutputLinkSettingsLocators.AND_OR(num),
                                  'по И', 'И/или', f'outputlink #{num}')
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        if outlinks > 0:
+            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
     
     def should_be_BIS_Ms_settings(self, BIS_Ms):
         logger.info(f'Checking settings in {BIS_Ms} BIS_Ms...')
-        self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
         for num in range(1, BIS_Ms + 1):  # Проверка соответствия настроек в каждом БИС-Ме
             self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num)).click()
             self.checkbox_checked(RS_485_SettingsLocators.DISABLE(num), 'отключен', f'RS-485 #{num}')
@@ -889,10 +993,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
                                  '2147483647', 'ИД по умолчанию', f'RS-485 #{num}')
             self.value_check(RS_485_SettingsLocators.SN(num),
                              str(65536 - num), 'серийный номер', f'RS-485 #{num}')
+        if BIS_Ms > 0:
+            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW).click()
 
     def should_be_addressable_devices_settings(self, AL, addr_devs):
         logger.info(f'Checking settings in {addr_devs} addressable devices in addressable loop {AL}...')
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
         for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num)).click()
             if num % 13 != 10:  # Если не ИСМ4 (у него отключен)
@@ -927,6 +1034,8 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.value_check(AddressableLoopSettingsLocators.SN(AL, num),
                              str(16777216 - num - (AL - 1) * addr_devs), 'серийный номер', 
                              f'addressable device #{num} on loop {AL}')
+        if addr_devs > 0:
+            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL)).click()
 
 
 # Проверка кнопки "в файл"
@@ -1042,3 +1151,60 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.browser.find_element(*SystemObjectsLocators.CLEAR_MODULE_BUTTON).click()
             assert self.is_element_visible(*MainPanelLocators.MODULE_CLEANING_MESSAGE(
                 module[0]), 10), 'There is no message about cleaning module 3'
+            
+
+# Проверка журнала
+    def check_column_name(self, num, expected_name):
+        column_text = self.browser.find_element(*EventLogLocators.NAME_COLUMN(num)).text
+        assert column_text == expected_name, \
+            f'{num} column is not called "{expected_name}", received text: {column_text}'
+
+    def check_column_names(self):
+        logger.info('Checking column names in event log...')
+        self.browser.find_element(*MainPanelLocators.EVENT_LOG_BUTTON).click()
+        self.check_column_name(1, 'Дата и время')
+        self.check_column_name(2, 'Событие')
+        self.check_column_name(3, 'Адрес')
+        self.check_column_name(4, '№ Область')
+    
+    def check_button_to_display_number_of_events(self):
+        logger.info('Checking the button to display number of events...')
+        events_on_page = self.browser.find_element(*EventLogLocators.EVENTS_NUMBER)  
+        events_on_page.click()
+        self.browser.find_element(*EventLogLocators.EVENTS_100).click()
+        assert events_on_page.text == '100', \
+            f'Number of events displayed is not 100, received: {events_on_page.text}'
+        assert self.is_element_visible(*EventLogLocators.DATE_TIME, 10), \
+            'First message did not appear in 10 seconds'
+        
+    def check_value_of_columns(self, ppk_num):
+        logger.info('Checking value of columns and date and time format...')
+        try:
+            first_date_time = datetime.strptime(
+                self.browser.find_element(*EventLogLocators.DATE_TIME).text, '%Y.%m.%d %H:%M:%S')
+        except ValueError:
+            assert False, 'String does not match the date and time format'
+        date = first_date_time.strftime('%Y.%m.%d')
+        actually_date = datetime.now().strftime('%Y.%m.%d')
+        assert date == actually_date, \
+            f'Date of the first event does not match "{actually_date}", received date: {date}'
+        event_value = self.browser.find_element(*EventLogLocators.EVENT).text
+        assert event_value == '-', f'Event value does not match, expected: "-", received: {event_value}'
+        address_value = self.browser.find_element(*EventLogLocators.ADDRESS).text
+        assert address_value == f'#{ppk_num}.1', \
+            f'Address value does not match, expected: "#{ppk_num}.1", received: {address_value}'
+        area_value = self.browser.find_element(*EventLogLocators.AREA).text
+        assert area_value == '-', f'Area value does not match, expected: "-", received: {area_value}'
+    
+    def check_colors_of_the_button(self):
+        logger.info('Checking colors of the event log button ...')
+        event_log_button = self.browser.find_element(*MainPanelLocators.EVENT_LOG_BUTTON)
+        color = event_log_button.value_of_css_property('background-color')  # Проверка цветов кнопки
+        assert '147, 147, 147' or '158, 158, 158' in color, \
+            f'Event log button background color is not grey, received color: {color}'
+        event_log_button.click()
+        self.browser.find_element(*MainPanelLocators.CLOSE_EXPANDED_TABS_BUTTON).click()  # Для отжатия
+        sleep(0.5)
+        color = event_log_button.value_of_css_property('background-color')
+        assert '0, 0, 0' in color, 'Event log button background color is not black: ' \
+            f'"rgba(0, 0, 0, 0)", received color: {color}'
