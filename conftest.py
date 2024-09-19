@@ -22,7 +22,8 @@ def pytest_addoption(parser):
 @pytest.hookimpl(tryfirst=True)
 def pytest_sessionstart(session):  # Выполняется перед началом всех тестов
     for filename in os.listdir('screenshots'):  # Удаляет скрины падений прошлых тестов
-        os.remove(f'screenshots/{filename}')
+        if filename != '.gitkeep':
+            os.remove(f'screenshots/{filename}')
     session.start_time = time.time()
     logger.debug('=== НАЧАЛО ТЕСТОВ ===')
 
