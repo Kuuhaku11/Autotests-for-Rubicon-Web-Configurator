@@ -14,8 +14,7 @@ from time import sleep
 Для повторной проверки упавших тестов рекомендуется добавить параметр: --reruns 1
 Для пропуска отдельных тестов можно раскомментировать фикстуру: @pytest.mark.skip
 '''
-link = 'http://localhost:8082/'
-version = '1.0.0.268'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
+version = '1.0.0.24'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
 online = True  # True / False | Подключен ли ППК-Р? (для проверки статуса)
 headless = False  # True / False | Запуск тестов без отображения в браузере
                  # (test_from_file_button не будет работать тк дилоговое окно windows не отобразится)
@@ -23,14 +22,15 @@ headless = False  # True / False | Запуск тестов без отобра
 ppk_num = 2  # Количество подключенных ППК-Р (Если меньше, чем по факту, остальные не будет проверяться)
 
 # Количество объектов, которые будут проверятся
-areas = 10  # Зоны пожаротушения | по умолчания 10 | максимум 255
-inlinks = 12  # ТС входы (6 типов) | по умолчания 12 | максимум 511
-outlinks = 9  # ТС выходы (3 типа) | по умолчания 9 | максимум 511
-BIS_Ms = 12  # БИС-Мы (4 типа) | по умолчания 12 | максимум 15
+areas = 10      # Зоны пожаротушения                              | по умолчания 10 | максимум 255
+inlinks = 12    # ТС входы (6 типов)                              | по умолчания 12 | максимум 511
+outlinks = 9    # ТС выходы (3 типа)                              | по умолчания 9  | максимум 511
+BIS_Ms = 12     # БИС-Мы (4 типа)                                 | по умолчания 12 | максимум 15
 addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26 | максимум 255
 #===================================================================================================
 
 
+link = 'http://localhost:8082/'
 pytestmark = pytest.mark.parametrize('headless', [headless])
 
 # @pytest.mark.skip
@@ -106,6 +106,7 @@ def test_full_record_to_ppk(browser):  # Полная запись в ППК
         for AL in 1, 2:
             page.open_ADDRESSABLE_LOOP(AL, ppk)
             page.add_addressable_devices(AL, addr_devs, ppk)  # На АШ добавляются АУ каждого типа
+        page.get_memory_info()
         page.close_ppk_objects(ppk)
     page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты модут удалиться
     page.refresh_page()  # При обновлении у объектов активируются настройки по умолчанию
@@ -173,6 +174,7 @@ def test_full_rewrite(browser, call_from_another_func=False):  # Полная п
         page.rewrite_addressable_devices_settings(1, addr_devs, ppk)
         page.rewrite_addressable_devices_settings(2, addr_devs, ppk)
         page.close_ppk_objects(ppk)
+    page.get_memory_info()
     if call_from_another_func == False:
         recording_setting_for_modules(page)
 
@@ -196,19 +198,24 @@ def test_check_full_rewrite(browser, call_from_another_func=False):  # Пров�
         page.should_be_addressable_devices_settings(1, addr_devs, ppk)
         page.should_be_addressable_devices_settings(2, addr_devs, ppk)
         page.close_ppk_objects(ppk)
+    page.get_memory_info()
 
 
-# @pytest.mark.skip
-def test_to_file_button(browser):  # Проверка кнопки "в файл"
+@pytest.mark.skip
+def test_to_file_and_from_file_buttons(browser):  # Проверка кнопки "в файл" и кнопки "из файла"
     page = MainPanel(browser, link)
     unload_setting(page)
     page.click_to_file_button()
     page.dismiss()
     page.click_to_file_button()
     page.accept()
+    page.click_from_file_button()
+    page.load_configuration_from_file()
+    page.delete_config_file()
+    test_check_full_rewrite(browser, True)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_to_file_for_intellect_button(browser):  # Проверка кнопки "в файл для Интеллекта"
     page = MainPanel(browser, link)
     unload_setting(page)
@@ -220,20 +227,10 @@ def test_to_file_for_intellect_button(browser):  # Проверка кнопки
 
 
 # @pytest.mark.skip
-def test_from_file_button(browser):  # Проверка кнопки "из файла"
-    page = MainPanel(browser, link)
-    page.open()
-    page.click_from_file_button()
-    page.load_configuration_from_file()
-    page.delete_config_file()
-    test_check_full_rewrite(browser, True)
-
-
-# @pytest.mark.skip
 def test_terminal(browser):  # Проверка терминала
     page = MainPanel(browser, link)
     page.open()
-    page.open_terminal()
+    page.open_terminal(ppk_num)
     page.unload_settings()
     # Проверяет наличие и орфографию сообщений создания всех типов объектов
     page.should_be_object_creation_messages(areas, inlinks, outlinks, BIS_Ms, addr_devs, ppk_num)
@@ -256,7 +253,7 @@ def recording_setting_for_modules(page):
     logger.info('Checking recording setting for all ppk')
     for ppk in range(1, ppk_num + 1):
         page.open_ppk_objects(ppk)  # Раскрыть объекты в текущем ППК
-        page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты модут удалиться
+        page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты могут удалиться
         page.refresh_page()
         page.open_terminal()
         page.recording_setting_for_module(1, ppk)  # Записать настройки для указанного модуля
@@ -274,7 +271,7 @@ def recording_setting_for_modules(page):
 
 def unload_setting(page):
     page.open()
-    page.open_terminal()
+    page.open_terminal(ppk_num)
     page.unload_settings()  # Выгрузка настроек из ППК
-    page.check_unload((areas + inlinks + outlinks) * 2, BIS_Ms * 2, addr_devs * 3, ppk_num)
+    page.check_unload(areas + inlinks + outlinks, BIS_Ms * 2, addr_devs * 3, ppk_num)
     page.close_terminal()

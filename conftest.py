@@ -1,3 +1,4 @@
+from main_page import get_memory_info_static
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -36,15 +37,13 @@ def pytest_sessionfinish(session):  # Выполняется после окон
 
 
 @pytest.hookimpl()
-def pytest_runtest_makereport(call, item):
-    """Хук, который вызывается после выполнения каждого теста.
-    Используется для обработки результатов тестов и логгирования assert ошибок.
-    """
+def pytest_runtest_makereport(call, item):  # Хук, который вызывается после выполнения каждого теста.
     if call.when == 'call':  # Проверяет выполнен ли тест
         if call.excinfo is not None:  # Проверяет есть ли информация в ошибке
             browser = item.funcargs.get('browser')
             browser.save_screenshot(f'screenshots/{time.strftime('%H-%M-%S_%d.%m.%Y')}_{item.name[:-7]}.png')
             logger.error(call.excinfo.value)
+            get_memory_info_static(str(type(browser)).split('.')[2])
         logger.info('Quit browser...\n')
 
 
@@ -58,6 +57,7 @@ def browser(request, headless):
         if headless:  # Если в настройках задан "True", то отображения в браузере не будет
             options.add_argument('headless=new')
         options.add_experimental_option('excludeSwitches', ['enable-logging'])  # Подавление DevTools
+        # options.add_argument("--enable-precise-memory-info")  # TODO
         browser = webdriver.Chrome(options=options)
     elif browser_name == 'firefox':
         print()
