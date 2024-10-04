@@ -33,6 +33,14 @@ class MainPanelLocators():
 
 
 class SystemObjectsLocators():
+    SEARCH_ITEM = (By.CLASS_NAME, 'css-1yj2jwg')
+    SEARCH_FIELD = (By.ID, 'search_by_label')
+    SEARCH_CLEAR_ICON = (By.CSS_SELECTOR, '[data-testid="ClearRoundedIcon"]')
+    @staticmethod
+    def SEARCH_ELEMENT(element): return (By.XPATH, f'//u[.="{element}"]')
+    @staticmethod
+    def SEARCH_BY_NAME(name): return (By.XPATH, f'//span[.="{name}"]')
+
     SYSTEM_ARROW = (By.CLASS_NAME, 'css-1v19ibo')
     ACTIVE_OBJECT = (By.CLASS_NAME, 'Mui-selected')
 

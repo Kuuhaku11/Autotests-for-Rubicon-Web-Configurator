@@ -1092,7 +1092,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
     def load_configuration_from_file(self):
         logger.info(f'Loading configuration from file...')
         try:
-            file_path = r'%USERPROFILE%\Downloads\config.json'
+            file_path = rf'{os.environ.get('USERPROFILE')}\Downloads\config.json'
             assert os.path.exists(file_path), f'Configuration file not found: "{file_path}"'
             keyboard.write(file_path)
             keyboard.send('enter')
@@ -1102,7 +1102,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def delete_config_file(self):
         logger.info(f'Deleting a configuration file...')
-        os.remove(r'%USERPROFILE%\Downloads\config.json')
+        os.remove(rf'{os.environ.get('USERPROFILE')}\Downloads\config.json')
 
 
 # Проверка кнопки "в файл для Интеллекта"
@@ -1112,7 +1112,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def delete_config_for_Intellect_file(self):
         logger.info(f'Deleting a configuration file...')
-        file_path = r'%USERPROFILE%\Downloads\configintellect.json'
+        file_path = rf'{os.environ.get('USERPROFILE')}\Downloads\configintellect.json'
         assert os.path.exists(file_path), f'Configuration file for Intellect not found: "{file_path}"'
         os.remove(file_path)
 

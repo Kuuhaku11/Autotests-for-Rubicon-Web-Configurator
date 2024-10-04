@@ -9,12 +9,6 @@ import os
 import time
 
 
-#  Все логи записываются в "test_log.log", но начало и окончание тестов не отображаются в терминале
-logger.remove()
-logger.add('logs/test_log.log', format='{time:MMMM D, YYYY > HH:mm:ss} | {level} | {message}',
-           level='DEBUG', rotation='100 KB')
-logger.add(sys.stderr, level='INFO')
-
 def pytest_addoption(parser):
     parser.addoption('--browser_name', action='store', default='chrome',
                      help='Choose browser: chrome или firefox')
@@ -26,7 +20,19 @@ def pytest_sessionstart(session):  # Выполняется перед нача�
         if filename != '.gitkeep':
             os.remove(f'screenshots/{filename}')
     session.start_time = time.time()
+
+
+def pytest_collection_modifyitems(items):  # Выполняется после сбора тестовой информации
+    filepath = items[0].fspath
+    filename = os.path.basename(filepath)[:-3]  # Имя запущенного файла с тестами
+    logger.warning(filename)
+    #  Все логи записываются в "test_log.log", но начало и окончание тестов не отображаются в терминале
+    logger.remove()
+    logger.add(f'logs/{filename}_logs/test_log.log', format='{time:MMMM D, YYYY > HH:mm:ss} | {level} | {message}',
+            level='DEBUG', rotation='100 KB')
+    logger.add(sys.stderr, level='INFO')
     logger.debug('=== НАЧАЛО ТЕСТОВ ===')
+
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -57,7 +63,6 @@ def browser(request, headless):
         if headless:  # Если в настройках задан "True", то отображения в браузере не будет
             options.add_argument('headless=new')
         options.add_experimental_option('excludeSwitches', ['enable-logging'])  # Подавление DevTools
-        # options.add_argument("--enable-precise-memory-info")  # TODO
         browser = webdriver.Chrome(options=options)
     elif browser_name == 'firefox':
         print()

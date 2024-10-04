@@ -15,6 +15,7 @@ def get_memory_info_static(browser_name):  # Выводит затраты оп�
         logger.warning(f'Memory usage by page: VMS: {mem_info.vms / (1024 ** 2):.2f} MB; ' \
                                              f'RSS: {mem_info.rss / (1024 ** 2):.2f} MB (PID: {pid})')
         
+
 class Page():
     def __init__(self, browser, url, timeout=10):
         self.browser = browser
