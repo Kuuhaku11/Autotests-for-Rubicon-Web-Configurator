@@ -1,6 +1,5 @@
 from main_page import Page
 from locators import (MainPanelLocators, SystemObjectsLocators)
-from selenium.common.exceptions import StaleElementReferenceException
 from loguru import logger
 import keyboard
 import os
@@ -8,80 +7,13 @@ from time import sleep
 
 
 class Sidebar(Page):  # Класс для тестирования по тест-кейсу "Главная панель" (DRBN-T52)
-
-# Общие функции
-    def check_presence_and_spelling(self, locator, button_name):
-        assert self.is_element_present(locator), \
-            f'Button "{button_name}" is not presented'
-        button_text = self.browser.find_element(*locator).text
-        assert button_text == button_name, \
-            f'Button "{button_name}" has a spelling error6, button text: {button_text}'
-
-    def presence_and_spelling(self, locator, button_name):  # Проверка на наличие элемента и ошибки
-        logger.info(f'Checking the button "{button_name}"...')
-        try:
-            self.check_presence_and_spelling(locator, button_name)
-        except StaleElementReferenceException:  # Firefox выдает ошибку из-за обновления элементов
-            self.check_presence_and_spelling(locator, button_name)
-
-    def refresh_page(self):
-        assert self.is_element_clickable(MainPanelLocators.LOGO), 'Logo is not clickable'
-        self.browser.find_element(*MainPanelLocators.LOGO).click()  # Нажимаем на лого
-
-    def open_terminal(self, ppk=1):
-        sleep(0.3)  # f
-        if ppk > 1 and not self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2)):
-            self.browser.find_element(*MainPanelLocators.TO_PPK_BUTTON).click()
-        self.browser.find_element(*MainPanelLocators.TERMINAL_BUTTON).click()
-        assert self.is_element_present(MainPanelLocators.TERMINAL_FORM), \
-            'Terminal does not open'
-
-    def close_terminal(self):
-        sleep(1)
-        self.browser.find_element(*MainPanelLocators.CLOSE_TERMINAL_ARROW).click()
-        assert self.is_element_present(MainPanelLocators.CLOSE_TERMINAL_ARROW), \
-            'Terminal does not close'
-
-    def open_ppk_objects(self, ppk):
-        self.browser.find_element(*SystemObjectsLocators.PPK_R_ARROW(ppk)).click()
-
-    def close_ppk_objects(self, ppk_num):
-        self.browser.find_element(*SystemObjectsLocators.PPK_R_ARROW(ppk_num)).click()
-
-    def open_module_objects(self, module_num, ppk):
-        self.browser.find_element(*SystemObjectsLocators.MODULE_ARROW(module_num, ppk)).click()
-
-    def close_expanded_tabs(self):  # Закрыть все вкладки
-        self.browser.find_element(*MainPanelLocators.CLOSE_EXPANDED_TABS_BUTTON).click()
-
-    def save_settings(self):
-        self.button_should_be_clickable(MainPanelLocators.SAVE_BUTTON, 'СОХРАНИТЬ')
-        self.browser.find_element(*MainPanelLocators.SAVE_BUTTON).click()
-    
-    def button_should_be_clickable(self, locator, button):
-        assert self.is_element_clickable(locator), f'Button "{button}" is not clickable'
-
-    def expand_all_objects(self, ppk):
-        self.open_module_objects(1, ppk)
-        self.open_module_objects(2, ppk)
-        self.open_module_objects(3, ppk)
-        self.open_ADDRESSABLE_LOOP(1, ppk)
-        self.open_ADDRESSABLE_LOOP(2, ppk)
-
-    def open_ADDRESSABLE_LOOP(self, AL, ppk):
-        assert self.is_element_clickable(SystemObjectsLocators.ADDRESSABLE_LOOP(ppk, AL)), \
-            f'Addressable loop arrow on PPK#{ppk} is not clickable'
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_LOOP(ppk, AL)).click()
-    
+# Проверка поля поиска
     def check_input_characters(self, locator):
         expected_value = 'azAOЁZайёяАЯ0123456789`@#№$%^:;&?!*()[]|/<>.,-_=+}~{ьъзшщюц'
         self.browser.find_element(*locator).send_keys(expected_value)
         value = self.browser.find_element(*locator).get_attribute('value')
         assert expected_value == value, f'Value in search field does not match, ' \
                                         f'expected "{expected_value}", received "{value}"'
-
-
-# Проверка поля поиска
     def should_be_search_field(self):
         logger.info('Checking search field...')
         assert self.is_element_visible(SystemObjectsLocators.SEARCH_ITEM), 'Search field is not displayed'
@@ -253,3 +185,25 @@ class Sidebar(Page):  # Класс для тестирования по тест
         self.search_sub('Выход ИСМ 5', 'ИСМ5', 2)
         self.search_sub('Тампер', 'ИСМ5')
         self.clear_search_field()
+
+
+# Проверка вкладки "Система"
+    def check_system_tab(self):
+        self.check_tab_with_arrow(SystemObjectsLocators.SYSTEM_FORM, 
+                                  SystemObjectsLocators.SYSTEM_ARROW, 
+                                  SystemObjectsLocators.PPK_R_FORM(1), 'Система')
+    
+
+# Проверка вкладки "Система"
+    def check_close_all_tabs_button(self):
+        logger.info('Checking close all tabs button...')
+        self.load_configuration_from_file()
+        for num in 1, 2:
+            self.open_ppk_objects(num)
+            self.open_all_objects(num)
+        self.refresh_page()
+        self.close_expanded_tabs()
+        self.refresh_page()
+        sleep(0.2)
+        assert self.is_not_element_present(SystemObjectsLocators.MODULE_FORM(1, 1)), \
+            'Tabs are not collapsed, system elements are visible'

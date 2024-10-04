@@ -2,7 +2,6 @@ from main_page import Page
 from locators import (MainPanelLocators, SystemObjectsLocators, AreaSettingsLocators,
                       InputLinkSettingsLocators, OutputLinkSettingsLocators, 
                       RS_485_SettingsLocators, AddressableLoopSettingsLocators, EventLogLocators)
-from selenium.common.exceptions import StaleElementReferenceException
 from loguru import logger
 import keyboard
 import os
@@ -12,67 +11,6 @@ from time import sleep
 
 
 class MainPanel(Page):  # Класс для тестирования по тест-кейсу "Главная панель" (DRBN-T52)
-
-# Общие функции
-    def check_presence_and_spelling(self, locator, button_name):
-        assert self.is_element_present(locator), \
-            f'Button "{button_name}" is not presented'
-        button_text = self.browser.find_element(*locator).text
-        assert button_text == button_name, \
-            f'Button "{button_name}" has a spelling error6, button text: {button_text}'
-
-    def presence_and_spelling(self, locator, button_name):  # Проверка на наличие элемента и ошибки
-        logger.info(f'Checking the button "{button_name}"...')
-        try:
-            self.check_presence_and_spelling(locator, button_name)
-        except StaleElementReferenceException:  # Firefox выдает ошибку из-за обновления элементов
-            self.check_presence_and_spelling(locator, button_name)
-
-    def refresh_page(self):
-        assert self.is_element_clickable(MainPanelLocators.LOGO), 'Logo is not clickable'
-        self.browser.find_element(*MainPanelLocators.LOGO).click()  # Нажимаем на лого
-
-    def open_terminal(self, ppk=1):
-        sleep(0.3)  # f
-        if ppk > 1 and not self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2)):
-            self.browser.find_element(*MainPanelLocators.TO_PPK_BUTTON).click()
-        self.browser.find_element(*MainPanelLocators.TERMINAL_BUTTON).click()
-        assert self.is_element_present(MainPanelLocators.TERMINAL_FORM), \
-            'Terminal does not open'
-
-    def close_terminal(self):
-        sleep(1)
-        self.browser.find_element(*MainPanelLocators.CLOSE_TERMINAL_ARROW).click()
-        assert self.is_element_present(MainPanelLocators.CLOSE_TERMINAL_ARROW), \
-            'Terminal does not close'
-
-    def open_ppk_objects(self, ppk):
-        self.browser.find_element(*SystemObjectsLocators.PPK_R_ARROW(ppk)).click()
-
-    def close_ppk_objects(self, ppk_num):
-        self.browser.find_element(*SystemObjectsLocators.PPK_R_ARROW(ppk_num)).click()
-
-    def open_module_objects(self, module_num, ppk):
-        self.browser.find_element(*SystemObjectsLocators.MODULE_ARROW(module_num, ppk)).click()
-
-    def close_expanded_tabs(self):  # Закрыть все вкладки
-        self.browser.find_element(*MainPanelLocators.CLOSE_EXPANDED_TABS_BUTTON).click()
-
-    def save_settings(self):
-        self.button_should_be_clickable(MainPanelLocators.SAVE_BUTTON, 'СОХРАНИТЬ')
-        self.browser.find_element(*MainPanelLocators.SAVE_BUTTON).click()
-    
-    def button_should_be_clickable(self, locator, button):
-        assert self.is_element_clickable(locator), f'Button "{button}" is not clickable'
-
-    def expand_all_objects(self, ppk):
-        self.open_module_objects(1, ppk)
-        self.open_module_objects(2, ppk)
-        self.open_module_objects(3, ppk)
-        self.open_ADDRESSABLE_LOOP(1, ppk)
-        self.open_ADDRESSABLE_LOOP(2, ppk)
-
-
 # Проверка title
     def check_tab_name_on_title(self):
         logger.info('Checking the title...')
@@ -268,11 +206,6 @@ class MainPanel(Page):  # Класс для тестирования по тес
                 self.browser.find_element(*SystemObjectsLocators.TYPES(i % 4 + 1)).click()  # Изменить тип выхода
                 self.is_not_element_present(SystemObjectsLocators.UNIT_MENU_CONFIG)  # f
             self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW(ppk)).click()
-    
-    def open_ADDRESSABLE_LOOP(self, AL, ppk):
-        assert self.is_element_clickable(SystemObjectsLocators.ADDRESSABLE_LOOP(ppk, AL)), \
-            f'Addressable loop arrow on PPK#{ppk} is not clickable'
-        self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_LOOP(ppk, AL)).click()
 
     def add_addressable_devices(self, AL, addr_devs, ppk):
         logger.info(f'Creating {addr_devs} addressable devices on addressable loop {AL} on PPK#{ppk}...')
@@ -329,7 +262,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         self.save_settings()
         for ppk in range(1, ppk_num + 1):
             self.open_ppk_objects(ppk)
-            self.expand_all_objects(ppk)
+            self.open_all_objects(ppk)
             if areas > 0:
                 self.browser.find_element(*SystemObjectsLocators.AREA_ARROW(ppk)).click()  # Раскрыть Зоны
                 assert self.is_element_present(SystemObjectsLocators.AREA_SAVE_ICON(ppk)), \
@@ -374,7 +307,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         sleep(0.5)
         for ppk in range(1, ppk_num + 1):
             self.open_ppk_objects(ppk)
-            self.expand_all_objects(ppk)
+            self.open_all_objects(ppk)
             if areas > 0:
                 self.browser.find_element(*SystemObjectsLocators.AREA_ARROW(ppk)).click()
                 self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(1, ppk)).click()
@@ -659,7 +592,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.browser.find_element(*SystemObjectsLocators.AREA_ARROW(ppk)).click()  # Раскрыть Зоны
         for area_num in range(1, areas):  # У каждой Зоны Пожаротушения изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.AREA_ITEMS(area_num, ppk)).click()
-            self.browser.execute_script("scrollBy(0, -1000);")  # Прокрутка страницы вверх
+            self.browser.execute_script('scrollBy(0, -1000);')  # Прокрутка страницы вверх
             self.select_in_list(AreaSettingsLocators.ENTERS_THE_AREA(area_num, ppk), areas - 1)
             self.browser.find_element(*AreaSettingsLocators.DISABLE(area_num, ppk)).click()
             self.browser.find_element(*AreaSettingsLocators.DELAY_IN_EVACUATION(area_num, ppk)
@@ -769,7 +702,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW(ppk)).click()  # Раскрыть RS-485
         for num in range(1, BIS_Ms + 1):  # У каждого БИС-Ма изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(num, ppk)).click()
-            self.browser.execute_script("scrollBy(0, -1000);")  # Прокрутка страницы вверх
+            self.browser.execute_script('scrollBy(0, -1000);')  # Прокрутка страницы вверх
             self.browser.find_element(*RS_485_SettingsLocators.DISABLE(num, ppk)).click()
             if num % 4 == 0:  # Тип RS-485 - ТИ
                 self.browser.find_element(*RS_485_SettingsLocators.FIRE(num, ppk)).click()
@@ -1029,7 +962,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         logger.info(f'Checking settings in {addr_devs} addressable devices in loop {AL} on PPK#{ppk}...')
         if addr_devs > 0:
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL, ppk)).click()
-        self.browser.execute_script("scrollBy(0, 200);")
+        self.browser.execute_script('scrollBy(0, 200);')
         for num in range(1, addr_devs + 1):  # У каждого АУ на указаном шлейфу изменить все настройки
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, num, ppk)).click()
             if num % 13 != 10:  # Если не ИСМ4 (у него отключен)
@@ -1236,7 +1169,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
         assert '147, 147, 147' or '158, 158, 158' in color, \
             f'Event log button background color is not grey, received color: {color}'
         event_log_button.click()
-        self.browser.find_element(*MainPanelLocators.CLOSE_EXPANDED_TABS_BUTTON).click()  # Для отжатия
+        self.close_expanded_tabs()  # Для отжатия
         sleep(0.5)
         color = event_log_button.value_of_css_property('background-color')
         assert '0, 0, 0' in color, 'Event log button background color is not black: ' \

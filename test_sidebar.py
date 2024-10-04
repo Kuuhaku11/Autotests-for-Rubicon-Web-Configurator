@@ -54,6 +54,19 @@ def test_search_objects(browser):  # Проверка поиска всех об
     page.search_subunits()
 
 
+# @pytest.mark.skip
+def test_system_tab(browser):  # Проверка вкладки "Система"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_system_tab()
+
+# @pytest.mark.skip
+def test_close_all_tabs_button(browser):  # Проверка кнопки "Закрыть все вкладки"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_close_all_tabs_button()
+
+
 #===================================================================================================
 def recording_setting_for_modules(page):
     logger.info('Checking recording setting for all ppk')

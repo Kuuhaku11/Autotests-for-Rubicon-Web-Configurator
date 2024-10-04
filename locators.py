@@ -41,7 +41,8 @@ class SystemObjectsLocators():
     @staticmethod
     def SEARCH_BY_NAME(name): return (By.XPATH, f'//span[.="{name}"]')
 
-    SYSTEM_ARROW = (By.CLASS_NAME, 'css-1v19ibo')
+    SYSTEM_FORM = (By.CSS_SELECTOR, '.css-1sct4f5 > div')
+    SYSTEM_ARROW = (By.CSS_SELECTOR, '[data-testid="ExpandMoreIcon"]')
     ACTIVE_OBJECT = (By.CLASS_NAME, 'Mui-selected')
 
     @staticmethod
