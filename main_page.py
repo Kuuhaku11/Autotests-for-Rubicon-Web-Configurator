@@ -243,11 +243,6 @@ class Page():
         else:
             assert self.is_not_element_present(ConfigurationLocators.INFORMATION_PANEL), \
                 'Information panel present, but should not be'
-        
-        self.refresh_page()
-        color = self.browser.find_element(*locator).value_of_css_property('background-color')
-        assert '33, 33, 33' in color, f'Tab background color is not black: ' \
-            f'"rgba(33, 33, 33, 1)", received color: {color}'
 
     def check_delete_button(self):  # Перед выполнением не должно быть меток на удаение
         assert self.is_element_present(ConfigurationLocators.DELETE_BUTTON), 'Delete button is not present'

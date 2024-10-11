@@ -86,3 +86,46 @@ def test_change_addresses(browser):  # Проверка адресов посл�
     page = Sidebar(browser, link)
     page.open()
     page.check_ppk_address()
+
+
+# @pytest.mark.skip
+def test_module_1_tab(browser):  # Проверка вкладки "#1 Области"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_module_1_tab(ppk_num)
+    page.check_module_1_sub_tabs(ppk_num)
+
+
+# @pytest.mark.skip
+def test_rubiring_tab(browser):  # Проверка вкладки "Rubiring"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_rubiring_tab(ppk_num)
+
+
+# @pytest.mark.skip
+def test_UPS_tab(browser):  # Проверка вкладки "ИБП"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_UPS_tab(ppk_num)
+    page.check_UPS_sub_tabs(ppk_num)
+
+
+# @pytest.mark.skip
+def test_battery_tab(browser):  # Проверка вкладки "АКБ"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_battery_tab(ppk_num)
+
+
+# @pytest.mark.skip
+def test_power_tab(browser):  # Проверка вкладки "Питание"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_power_tab(ppk_num)
+
+# @pytest.mark.skip
+def test_logger_tab(browser):  # Проверка вкладки "Журнал"
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_logger_tab(ppk_num)

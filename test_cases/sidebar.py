@@ -194,6 +194,8 @@ class Sidebar(Page):  # Класс для тестирования по тест
         self.check_tab_with_arrow(SystemObjectsLocators.SYSTEM_FORM,
                                   SystemObjectsLocators.SYSTEM_ARROW, 
                                   SystemObjectsLocators.PPK_R_FORM(1), 'System')
+        indentation = round(self.browser.find_element(*SystemObjectsLocators.SYSTEM_FORM).rect['x'])
+        assert indentation == 24, f'System tab indentation does not match, expected 24, received {indentation}'
     
 
 # Проверка кнопки "Закрыть все вкладки"
@@ -245,6 +247,8 @@ class Sidebar(Page):  # Класс для тестирования по тест
                                   SystemObjectsLocators.PPK_R_ARROW(1), 
                                   SystemObjectsLocators.MODULE_FORM(1, 1), '#1 PPK')
         self.check_positioning(SystemObjectsLocators.PPK_R_BOX_1, '#1 ППК-Р', '1000')
+        indentation = round(self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(1)).rect['x'])
+        assert indentation == 40, f'PPK tab indentation does not match, expected 40, received {indentation}'
 
     def check_delete_ppk(self, ppk):
         logger.info(f'Checking PPK settings...')
@@ -281,3 +285,134 @@ class Sidebar(Page):  # Класс для тестирования по тест
             f'PPK address does not match, expected "#30 ППК-Р"'
         self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(30)).click()
         self.change_address(1)
+
+
+# Проверка вкладки Области
+    def check_module_1_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 10), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.presence_and_spelling(SystemObjectsLocators.MODULE_FORM(1, num), '#1 Области', 'tab')
+            self.check_tab_with_arrow(SystemObjectsLocators.MODULE_FORM(1, num), 
+                                    SystemObjectsLocators.MODULE_ARROW(1, num),
+                                    SystemObjectsLocators.RUBIRING_FORM(num), '#1 module')
+            self.check_positioning(SystemObjectsLocators.MODULE_BOX(1, num), f'#{num} ППК-Р > #1 Области')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.MODULE_FORM(1, num)).rect['x'])
+            assert indentation == 64, \
+                f'Module #1 tab indentation does not match, expected 64, received {indentation}'
+            self.close_ppk_objects(num)
+    
+    def check_module_1_sub_tabs(self, ppk):
+        logger.info(f'Checking module #1 sub tabs on PPK#{ppk} field...')
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            text = self.browser.find_elements(*SystemObjectsLocators.SUB_TABS)[3].text
+            list_of_tabs = ['RubiRing', 'ИБП', 'Журнал', 'Область', '0', 'ТС вход', '0', 
+                            'ТС выход', '0', 'Общие счетчики', 'Загрузчик']
+            assert text.split('\n') == list_of_tabs, \
+                f'Sub tabs do not match, received: {text.split('\n')}'
+            self.close_ppk_objects(num)
+
+
+# Проверка вкладки Rubiring
+    def check_rubiring_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 15), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            self.presence_and_spelling(SystemObjectsLocators.RUBIRING_FORM(num), 'RubiRing', 'tab')
+            self.check_positioning(SystemObjectsLocators.RUBIRING_FORM(num), 
+                                   f'#{num} ППК-Р > #1 Области > #1 RubiRing')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.RUBIRING_BOX(num)).rect['x'])
+            assert indentation == 126, \
+                f'RubiRing tab indentation does not match, expected 126, received {indentation}'
+            self.close_ppk_objects(num)
+
+
+# Проверка вкладки ИБП
+    def check_UPS_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 10), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            self.presence_and_spelling(SystemObjectsLocators.UPS_FORM(num), 'ИБП', 'tab')
+            self.check_tab_with_arrow(SystemObjectsLocators.UPS_FORM(num), 
+                                    SystemObjectsLocators.UPS_ARROW(num),
+                                    SystemObjectsLocators.BATTERY_FORM(num), 'UPS')
+            self.check_positioning(SystemObjectsLocators.UPS_BOX(num), 
+                                   f'#{num} ППК-Р > #1 Области > #1 ИБП')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.UPS_FORM(num)).rect['x'])
+            assert indentation == 126, \
+                f'UPS tab indentation does not match, expected 126, received {indentation}'
+            self.close_ppk_objects(num)
+    
+    def check_UPS_sub_tabs(self, ppk):
+        logger.info(f'Checking UPS sub tabs on PPK#{ppk} field...')
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.browser.find_element(*SystemObjectsLocators.UPS_ARROW(num)).click()
+            text = self.browser.find_elements(*SystemObjectsLocators.SUB_TABS)[6].text
+            list_of_tabs = ['АКБ', 'Питание']
+            assert text.split('\n') == list_of_tabs, \
+                f'Sub tabs do not match, received: {text.split('\n')}'
+            self.close_ppk_objects(num)
+
+
+# Проверка вкладки АКБ
+    def check_battery_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 15), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            self.browser.find_element(*SystemObjectsLocators.UPS_ARROW(num)).click()
+            self.presence_and_spelling(SystemObjectsLocators.BATTERY_FORM(num), 'АКБ', 'tab')
+            self.check_positioning(SystemObjectsLocators.BATTERY_BOX(num), 
+                                   f'#{num} ППК-Р > #1 Области > #1 ИБП > #1 АКБ')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.BATTERY_FORM(num)).rect['x'])
+            assert indentation == 150, \
+                f'Battary tab indentation does not match, expected 150, received {indentation}'
+            self.close_ppk_objects(num)
+
+
+# Проверка вкладки Питание
+    def check_power_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 15), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            self.browser.find_element(*SystemObjectsLocators.UPS_ARROW(num)).click()
+            self.presence_and_spelling(SystemObjectsLocators.POWER_FORM(num), 'Питание', 'tab')
+            self.check_positioning(SystemObjectsLocators.POWER_BOX(num), 
+                                   f'#{num} ППК-Р > #1 Области > #1 ИБП > #1 Питание')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.POWER_FORM(num)).rect['x'])
+            assert indentation == 150, \
+                f'Power tab indentation does not match, expected 150, received {indentation}'
+            self.close_ppk_objects(num)
+
+
+# Проверка вкладки Журнал
+    def check_logger_tab(self, ppk):
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 15), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
+            self.open_ppk_objects(num)
+            self.open_module_objects(1, num)
+            self.presence_and_spelling(SystemObjectsLocators.LOGGER_FORM(num), 'Журнал', 'tab')
+            self.check_positioning(SystemObjectsLocators.LOGGER_BOX(num), 
+                                   f'#{num} ППК-Р > #1 Области > #1 Журнал', '1110')
+            indentation = round(self.browser.find_element(
+                *SystemObjectsLocators.LOGGER_FORM(num)).rect['x'])
+            assert indentation == 126, \
+                f'Logger tab indentation does not match, expected 126, received {indentation}'
+            self.close_ppk_objects(num)

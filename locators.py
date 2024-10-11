@@ -59,7 +59,39 @@ class SystemObjectsLocators():
     @staticmethod
     def MODULE_FORM(module_num, ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_{module_num}_')
     @staticmethod
+    def MODULE_BOX(module_num, ppk): return (By.ID, f'id_item_{ppk}_Box_Module_{module_num}_')
+    @staticmethod
     def MODULE_ARROW(module_num, ppk): return (By.ID, f'id_expand_{ppk}_Box_Module_{module_num}_')
+
+    @staticmethod
+    def RUBIRING_FORM(ppk): return (By.ID, f'id_item_{ppk}_Box_Module_1_Ring_1_')
+    @staticmethod
+    def RUBIRING_BOX(ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_1_Ring_1_')
+
+    @staticmethod
+    def UPS_FORM(ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_1_UPS_1_')
+    @staticmethod
+    def UPS_BOX(ppk): return (By.ID, f'id_item_{ppk}_Box_Module_1_UPS_1_')
+    @staticmethod
+    def UPS_ARROW(ppk): return (By.ID, f'id_expand_{ppk}_Box_Module_1_UPS_1_')
+
+    @staticmethod
+    def BATTERY_FORM(ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_1_UPS_1_Battery_1_')
+    @staticmethod
+    def BATTERY_BOX(ppk): return (By.ID, f'id_item_{ppk}_Box_Module_1_UPS_1_Battery_1_')
+
+    @staticmethod
+    def POWER_FORM(ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_1_UPS_1_Power_1_')
+    @staticmethod
+    def POWER_BOX(ppk): return (By.ID, f'id_item_{ppk}_Box_Module_1_UPS_1_Power_1_')
+
+    @staticmethod
+    def LOGGER_FORM(ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_1_Logger_1_')
+    @staticmethod
+    def LOGGER_BOX(ppk): return (By.ID, f'id_item_{ppk}_Box_Module_1_Logger_1_')
+
+    SUB_TABS = (By.CLASS_NAME, 'css-1uzmcsd')
+
 
     @staticmethod
     def AREA_ADD_ICON(ppk): return (By.ID, f'id_add_{ppk}_Box_Module_1_Area')
