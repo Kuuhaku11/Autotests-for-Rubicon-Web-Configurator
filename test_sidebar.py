@@ -14,19 +14,11 @@ from time import sleep
 Для повторной проверки упавших тестов рекомендуется добавить параметр: --reruns 1
 Для пропуска отдельных тестов можно раскомментировать фикстуру: @pytest.mark.skip
 '''
-version = '1.0.0.24'  # Необходимо указать актуальную версию конифгуратора для проверки соотвествия
-online = True  # True / False | Подключен ли ППК-Р? (для проверки статуса)
+
 headless = False  # True / False | Запуск тестов без отображения в браузере
                  # (test_from_file_button не будет работать тк дилоговое окно windows не отобразится)
 
 ppk_num = 2  # Количество подключенных ППК-Р (Если меньше, чем по факту, остальные не будет проверяться)
-
-# Количество объектов, которые будут проверятся
-areas = 10      # Зоны пожаротушения                              | по умолчания 10 | максимум 255
-inlinks = 12    # ТС входы (6 типов)                              | по умолчания 12 | максимум 511
-outlinks = 9    # ТС выходы (3 типа)                              | по умолчания 9  | максимум 511
-BIS_Ms = 12     # БИС-Мы (4 типа)                                 | по умолчания 12 | максимум 15
-addr_devs = 26  # Адресные устройства для двух шлейфов (13 типов) | по умолчания 26 | максимум 255
 #===================================================================================================
 
 
@@ -64,33 +56,33 @@ def test_system_tab(browser):  # Проверка вкладки "Система
 def test_close_all_tabs_button(browser):  # Проверка кнопки "Закрыть все вкладки"
     page = Sidebar(browser, link)
     page.open()
-    page.check_close_all_tabs_button()
+    page.check_close_all_tabs_button(ppk_num)
 
 
-#===================================================================================================
-def recording_setting_for_modules(page):
-    logger.info('Checking recording setting for all ppk')
-    for ppk in range(1, ppk_num + 1):
-        page.open_ppk_objects(ppk)  # Раскрыть объекты в текущем ППК
-        page.save_settings()  # TODO баг, при большой конфигурации без сохранения объекты могут удалиться
-        page.refresh_page()
-        page.open_terminal()
-        page.recording_setting_for_module(1, ppk)  # Записать настройки для указанного модуля
-        page.check_record(ppk, 'Модуль#1(Области)', (areas + inlinks + outlinks) * 2)
-        page.refresh_page()
-        page.open_terminal()
-        page.recording_setting_for_module(2, ppk)
-        page.check_record(ppk, 'Модуль#2(Выходы)', BIS_Ms * 8)
-        page.refresh_page()
-        page.open_terminal()
-        page.recording_setting_for_module(3, ppk)
-        page.check_record(ppk, 'Модуль#3(Адресные шлейфы)', addr_devs * 12)
-        page.close_ppk_objects(ppk)  # Свернуть объекты в текущем ППК
-
-
-def unload_setting(page):
+# @pytest.mark.skip
+def test_ppk_add_button(browser):  # Проверка кнопки добавления ППК-Р "+"
+    page = Sidebar(browser, link)
     page.open()
-    page.open_terminal(ppk_num)
-    page.unload_settings()  # Выгрузка настроек из ППК
-    page.check_unload(areas + inlinks + outlinks, BIS_Ms * 2, addr_devs * 3, ppk_num)
-    page.close_terminal()
+    page.add_ppk(29 - ppk_num)
+    page.refresh_page()
+    page.check_ppk_num(29, ppk_num)  # Проверка 29 ППК, что при нажатии кнопки, не добавляется 2 ППК
+    page.add_ppk(2)
+    page.refresh_page()
+    page.check_ppk_num(30, ppk_num)  # Проверка, что 31-й ППК не добавляется
+
+
+# @pytest.mark.skip
+def test_ppk_settinds(browser):  # Проверка вкладки и панели конфигурация ППК
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_ppk_tab()
+    page.check_delete_ppk(ppk_num)
+    page.check_name_ppk()
+    page.change_ppk_address()
+
+
+# @pytest.mark.skip
+def test_change_addresses(browser):  # Проверка адресов после очистки кэша
+    page = Sidebar(browser, link)
+    page.open()
+    page.check_ppk_address()

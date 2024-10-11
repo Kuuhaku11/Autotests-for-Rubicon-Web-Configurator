@@ -1,5 +1,5 @@
 from main_page import Page
-from locators import (MainPanelLocators, SystemObjectsLocators)
+from locators import (MainPanelLocators, SystemObjectsLocators, ConfigurationLocators)
 from loguru import logger
 import keyboard
 import os
@@ -43,7 +43,7 @@ class Sidebar(Page):  # Класс для тестирования по тест
                 f'{8} times, total found {actually_quantity}'
 
     def load_configuration_from_file(self):
-        logger.info(f'Loading configuration for search objects from file...')
+        logger.info(f'Loading configuration with 2 ppk for search objects from file...')
         self.browser.find_element(*MainPanelLocators.FROM_FILE_BUTTON).click()
         try:
             file_path = rf'{os.getcwd()}\configurations\auto_test_config_for_search_2_ppk.json'
@@ -189,21 +189,95 @@ class Sidebar(Page):  # Класс для тестирования по тест
 
 # Проверка вкладки "Система"
     def check_system_tab(self):
-        self.check_tab_with_arrow(SystemObjectsLocators.SYSTEM_FORM, 
+        self.presence_and_spelling(SystemObjectsLocators.SYSTEM_FORM, 'Система', 'tab')
+        self.browser.find_element(*SystemObjectsLocators.SYSTEM_ARROW).click()
+        self.check_tab_with_arrow(SystemObjectsLocators.SYSTEM_FORM,
                                   SystemObjectsLocators.SYSTEM_ARROW, 
-                                  SystemObjectsLocators.PPK_R_FORM(1), 'Система')
+                                  SystemObjectsLocators.PPK_R_FORM(1), 'System')
     
 
-# Проверка вкладки "Система"
-    def check_close_all_tabs_button(self):
+# Проверка кнопки "Закрыть все вкладки"
+    def check_close_all_tabs_button(self, ppk):
         logger.info('Checking close all tabs button...')
-        self.load_configuration_from_file()
-        for num in 1, 2:
+        if ppk > 1:
+            assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(2), 10), '#2 PPK is not present'
+        for num in range(1, ppk + 1):
             self.open_ppk_objects(num)
             self.open_all_objects(num)
         self.refresh_page()
         self.close_expanded_tabs()
         self.refresh_page()
         sleep(0.2)
-        assert self.is_not_element_present(SystemObjectsLocators.MODULE_FORM(1, 1)), \
-            'Tabs are not collapsed, system elements are visible'
+        for num in range(1, ppk + 1):
+            assert self.is_not_element_present(SystemObjectsLocators.MODULE_FORM(1, num)), \
+                'Tabs are not collapsed, system elements are visible'
+            assert self.is_not_element_present(SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(1, num)), \
+                'Tabs are not collapsed, system elements are visible'
+            
+
+# Проверка кнопки добавления ППК-Р "+"
+    def add_ppk(self, quantity):
+        logger.info(f'Add {quantity} PPK...')
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(1)).click()
+        for _ in range(quantity):  # TODO проверить с несколькими физ ппк
+            self.browser.find_element(*SystemObjectsLocators.PPK_ADD_ICON).click()
+        active_object_addr = self.browser.find_element(*SystemObjectsLocators.ACTIVE_OBJECT_ADDRESS).text
+        assert active_object_addr == '#1 ППК-Р', 'Active tab changed after adding PPK, ' \
+            f'expected "#1 ППК-Р", received "{active_object_addr}"'
+
+    def check_ppk_num(self, quantity, ppk):
+        logger.info(f'Checking number of PPK...')
+        for num in range(1, ppk + 1):  # Проверка серийников физических ппк
+            self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(num)).click()
+            assert self.browser.find_element(
+                *SystemObjectsLocators.PPK_R_SN_FORM).get_attribute('value') != '0', \
+                f'SN of the #{num} PPK = 0, expected that this is a real PPK'
+        assert self.is_element_present(SystemObjectsLocators.PPK_R_FORM(quantity)), \
+            f'{quantity} PPK were not created'
+        assert self.is_not_element_present(SystemObjectsLocators.PPK_R_FORM(31)), \
+            '#31 PPK was created (max 30)'
+        
+
+# Проверка вкладки и панели конфигурация ППК
+    def check_ppk_tab(self):
+        self.presence_and_spelling(SystemObjectsLocators.PPK_R_FORM(1), '#1 ППК-Р', 'tab')
+        self.check_tab_with_arrow(SystemObjectsLocators.PPK_R_FORM(1), 
+                                  SystemObjectsLocators.PPK_R_ARROW(1), 
+                                  SystemObjectsLocators.MODULE_FORM(1, 1), '#1 PPK')
+        self.check_positioning(SystemObjectsLocators.PPK_R_BOX_1, '#1 ППК-Р', '1000')
+
+    def check_delete_ppk(self, ppk):
+        logger.info(f'Checking PPK settings...')
+        assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(ppk), 10), 'All PPK were not displayed'
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(1)).click()
+        self.check_delete_button()
+        self.add_ppk(1)
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(ppk + 1)).click()
+        assert self.is_element_present(ConfigurationLocators.DELETE_BUTTON), 'Delete button is not present'
+        self.browser.find_element(*ConfigurationLocators.DELETE_BUTTON).click()
+        self.refresh_page()
+        sleep(0.5)
+        self.is_not_element_present(SystemObjectsLocators.PPK_R_FORM(ppk + 1))
+    
+    def check_name_ppk(self):
+        sleep(0.2)
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(1)).click()
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_NAME_SETTING).send_keys(
+            'azAOЁZайёяАЯ0123456789`@#№$%^:;&?!*()[]|/<>.,-_=+}~{ьъзшщюц')
+        self.refresh_page()
+        text = self.browser.find_element(*SystemObjectsLocators.PPk_R_1_NAME).text
+        sleep(0.3)
+        assert text == 'azAOЁZайёяАЯ0123456789`@#№$%^:;&?!*()[]|/<>.,-_=+}~{ьъзшщюц', \
+            f'Name of PPK #1 does not match, received: "{text}"'
+        
+    def change_ppk_address(self):
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(1)).click()
+        self.check_change_address_field(30)
+
+
+# Проверка адресов после очистки кэша
+    def check_ppk_address(self):  # Проверка адресов после очистки кэша
+        assert self.is_element_present(SystemObjectsLocators.PPK_R_FORM(30)), \
+            f'PPK address does not match, expected "#30 ППК-Р"'
+        self.browser.find_element(*SystemObjectsLocators.PPK_R_FORM(30)).click()
+        self.change_address(1)

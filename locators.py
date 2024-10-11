@@ -44,11 +44,17 @@ class SystemObjectsLocators():
     SYSTEM_FORM = (By.CSS_SELECTOR, '.css-1sct4f5 > div')
     SYSTEM_ARROW = (By.CSS_SELECTOR, '[data-testid="ExpandMoreIcon"]')
     ACTIVE_OBJECT = (By.CLASS_NAME, 'Mui-selected')
+    ACTIVE_OBJECT_ADDRESS = (By.CLASS_NAME, 'css-16qv2i2')
 
+    PPK_ADD_ICON = (By.ID, 'ppk_add_button')
     @staticmethod
-    def PPK_R_FORM(ppk): return (By.XPATH, f'//span[contains(text(), "#{ppk}")]')
+    def PPK_R_FORM(ppk): return (By.XPATH, f'//span[contains(text(), "#{ppk} ППК-Р")]')
+    PPK_R_BOX_1 = (By.ID, 'ppk_1_Box')
     @staticmethod
     def PPK_R_ARROW(ppk): return (By.ID, f'id_expand_{ppk}_Box')
+    PPK_R_SN_FORM = (By.ID, 'id__0_SN')
+    PPK_R_NAME_SETTING = (By.ID, 'id__0_name')
+    PPk_R_1_NAME = (By.ID, 'name_of_ppk_1')
 
     @staticmethod
     def MODULE_FORM(module_num, ppk): return (By.ID, f'id_item_text_{ppk}_Box_Module_{module_num}_')
@@ -65,6 +71,11 @@ class SystemObjectsLocators():
     def NUMBER_OF_AREAS(ppk): return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_Area > span')
     @staticmethod
     def DELETE_AREAS(ppk): return (By.ID, f'delete_group_{ppk}_Box_Module_1_Area')
+    @staticmethod
+    def RESTORE_AREAS(ppk): return (By.CSS_SELECTOR, f'#id_item_{ppk}_Box_Module_1_Area .css-84se36')
+    @staticmethod
+    def INVISIBILITY_AREAS_NUM(ppk): 
+        return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_Area > .MuiBadge-invisible')
 
     @staticmethod
     def INPUTLINK_ADD_ICON(ppk): return (By.ID, f'id_add_{ppk}_Box_Module_1_InputLink')
@@ -76,6 +87,11 @@ class SystemObjectsLocators():
     def NUMBER_OF_INPUTLINK(ppk): return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_InputLink > span')
     @staticmethod
     def DELETE_INPUTLINKS(ppk): return (By.ID, f'delete_group_{ppk}_Box_Module_1_InputLink')
+    @staticmethod
+    def RESTORE_INPUTLINKS(ppk): return (By.CSS_SELECTOR, f'#id_item_{ppk}_Box_Module_1_InputLink .css-84se36')
+    @staticmethod
+    def INVISIBILITY_INPUTLINKS_NUM(ppk):
+        return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_InputLink > .MuiBadge-invisible')
 
     @staticmethod
     def OUTPUTLINK_ADD_ICON(ppk): return (By.ID, f'id_add_{ppk}_Box_Module_1_OutputLink')
@@ -87,6 +103,11 @@ class SystemObjectsLocators():
     def NUMBER_OF_OUTPUTLINK(ppk): return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_OutputLink > span')
     @staticmethod
     def DELETE_OUTPUTLINKS(ppk): return (By.ID, f'delete_group_{ppk}_Box_Module_1_OutputLink')
+    @staticmethod
+    def RESTORE_OUTPUTLINKS(ppk): return (By.CSS_SELECTOR, f'#id_item_{ppk}_Box_Module_1_OutputLink .css-84se36')
+    @staticmethod
+    def INVISIBILITY_OUTPUTLINKS_NUM(ppk):
+        return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_1_OutputLink > .MuiBadge-invisible')
 
     @staticmethod
     def RS_485_ADD_ICON(ppk): return (By.ID, f'id_add_{ppk}_Box_Module_2_SK')
@@ -98,18 +119,29 @@ class SystemObjectsLocators():
     def NUMBER_OF_RS_485(ppk): return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_2_SK > span')
     @staticmethod
     def DELETE_RS_485(ppk): return (By.ID, f'delete_group_{ppk}_Box_Module_2_SK')
+    @staticmethod
+    def RESTORE_RS_485(ppk): return (By.CSS_SELECTOR, f'#id_item_{ppk}_Box_Module_2_SK .css-84se36')
+    @staticmethod
+    def INVISIBILITY_RS_485_NUM(ppk):
+        return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_2_SK > .MuiBadge-invisible')
 
     @staticmethod
     def ADDRESSABLE_LOOP(ppk, AL): return (By.ID, f'id_expand_{ppk}_Box_Module_3_AL_{AL}_')
     @staticmethod
-    def ADDRESSABLE_DEVICES_ADD_ICON(AL, ppk): return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_3_AL_{AL}_AU')
+    def ADDRESSABLE_DEVICES_ADD_ICON(AL, ppk): return (By.ID, f'badge_{ppk}_Box_Module_3_AL_{AL}_AU')
     @staticmethod
     def ADDRESSABLE_DEVICES_ARROW(AL, ppk): return (By.ID, f'id_expand_{ppk}_Box_Module_3_AL_{AL}_AU')
     @staticmethod
     def ADDRESSABLE_DEVICES_ITEMS(AL, num, ppk):
         return (By.ID, f'id_item_text_{ppk}_Box_Module_3_AL_{AL}_AU_{num}_')
     @staticmethod
-    def DELETE_ADDRESSABLE_DEVICES(AL): return (By.ID, f'delete_group_1_Box_Module_3_AL_{AL}_AU')
+    def DELETE_ADDRESSABLE_DEVICES(AL, ppk): return (By.ID, f'delete_group_{ppk}_Box_Module_3_AL_{AL}_AU')
+    @staticmethod
+    def RESTORE_ADDRESSABLE_DEVICES(AL, ppk): 
+        return (By.CSS_SELECTOR, f'#id_item_{ppk}_Box_Module_3_AL_{AL}_AU .css-84se36')
+    @staticmethod
+    def INVISIBILITY_ADDRESSABLE_DEVICES_NUM(AL, ppk):
+        return (By.CSS_SELECTOR, f'#badge_{ppk}_Box_Module_3_AL_{AL}_AU > .MuiBadge-invisible')
 
     UNIT_MENU_CONFIG = (By.ID, 'unit-menu-config')
     SELECT_TYPE_ICON = (By.CSS_SELECTOR, '.css-sckop7 span')
@@ -142,6 +174,21 @@ class SystemObjectsLocators():
     UNLOAD_FINISH = (By.XPATH, '//p[contains(text(), " - stop read CFG from ALL PPKR")]')
 
     CLEAR_MODULE_BUTTON = (By.CLASS_NAME, 'css-174aos4')
+
+
+class ConfigurationLocators():
+    DELETE_BUTTON = (By.ID, 'delete_unit')
+    RESTORE_BUTTON = (By.CLASS_NAME, 'css-kuxjgv')
+    DELETE_MARK = (By.CLASS_NAME, 'css-1m703jz')
+    CHANGE_ADDRESS_BUTTON = (By.CSS_SELECTOR, '[data-testid="ppkr_sun_chip"]')
+    CHANGE_ADDRESS_INPUT = (By.ID, 'ppkr_sun_change_input')
+    CHANGE_ADDRESS_OK = (By.CSS_SELECTOR, '[data-testid="confirm_change_sun"]')
+
+    PATH = (By.CLASS_NAME, 'css-1isemmb')
+    CONFIGURATION_PANEL = (By.XPATH, '//p[.="конфигурация"]')
+    STATUS_PANEL = (By.XPATH, '//p[.="статус"]')
+    COMMAND_PANEL = (By.XPATH, '//p[.="команда"]')
+    INFORMATION_PANEL = (By.XPATH, '//p[.="информация"]')
 
 
 class AreaSettingsLocators():

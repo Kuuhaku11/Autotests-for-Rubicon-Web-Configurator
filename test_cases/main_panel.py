@@ -114,63 +114,60 @@ class MainPanel(Page):  # Класс для тестирования по тес
         assert self.is_element_present(MainPanelLocators.TO_PPK_BUTTON_IS_BLINKING), \
             'Button "В ППК" does not blink'
 
-    def check_record(self, ppk, module='', timeout=30):
-        start_time = time()
-        assert self.is_element_present(SystemObjectsLocators.RECORD_START(ppk, module)), \
-            f'Recording for {f'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} has not started'
-        assert self.is_element_visible(SystemObjectsLocators.RECORD_FINISH, max(timeout, 10)), \
-            f'Recording for {'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} has not finished, ' \
-            f'time spent: {time() - start_time:.2f}'
-        logger.success(f'Record to {'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} was successful, ' \
-                    f'time spent: {time() - start_time:.2f}')
-
-
-# Проверка кнопки ИЗ ППК
-    def unload_settings(self):
-        logger.info(f'Checking unloading settings from all ppk...')
-        sleep(1)
-        button = self.browser.find_element(*MainPanelLocators.FROM_PPK_BUTTON)
-        button.click()
-        if '250, 250, 250' in button.value_of_css_property('color'):  # Темная тема
-            sleep(1)
-            assert self.is_element_present(MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_DARK), \
-            'Button "ИЗ ППК" does not blink'
-        else:
-            assert self.is_element_present(MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_LIGHT), \
-            'Button "ИЗ ППК" does not blink'
-
-    def check_unload(self, m1_wait, m2_wait, m3_wait, ppk_num):
-        start_time = time()
-        assert self.is_element_present(SystemObjectsLocators.UNLOAD_START), \
-            f'Unload for all ppkr has not started, time spent: {time() - start_time:.2f}'
-        for ppk in range(1, ppk_num + 1):
-            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
-                ppk, '1(Области)'), max(m3_wait, 30) * (1 + (ppk > 1))), \
-                f'Unload for PPK#{ppk} module#1 has not started, time spent: {time() - start_time:.2f}'
-            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
-                ppk, '2(Выходы)'), max(m1_wait, 30) * (1 + (ppk > 1))), \
-                f'Unload for PPK#{ppk} module#2 has not started, time spent: {time() - start_time:.2f}'
-            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
-                ppk, '3(Адресные шлейфы)'), max(m2_wait, 30) * (1 + (ppk > 1))), \
-                f'Unload for PPK#{ppk} module#3 has not started, time spent: {time() - start_time:.2f}'
-        assert self.is_element_visible(SystemObjectsLocators.UNLOAD_FINISH, 
-            max(m3_wait, 30) * (1 + (ppk_num > 1))), \
-            f'Unload for all ppkr has not finished, time spent: {time() - start_time:.2f}'
-        logger.success(f'Unload from all ppk was successful, time spent: {time() - start_time:.2f}')
-
 
 # Полная запись в ППК
+    def check_group_buttons(self, object, delete_locator, restore_locator, arrow_locator, 
+                            invisible_locator, add_locator, first_item_locator):
+        '''Проверяет, что нету кнопок для общего удаления, восстановления, стрелки, и количества объектов,
+        что они появляются при добавлении объекта, и что снова исчезают при его удалении.
+        '''
+        assert self.is_not_element_present(delete_locator), \
+            f'{object} group delete button received, but should not be'
+        assert self.is_not_element_present(restore_locator), \
+            f'{object} group restore button received, but should not be'
+        assert self.is_not_element_present(arrow_locator), \
+            f'{object} arrow received, but should not be'
+        assert self.is_element_present(invisible_locator), \
+            f'Number of {object} is visible, but should not be'
+        self.browser.find_element(*add_locator).click()
+        assert self.is_element_present(delete_locator), \
+            f'{object} group delete button not received, but should be'
+        assert self.is_element_present(restore_locator), \
+            f'{object} group restore button not received, but should be'
+        assert self.is_element_present(arrow_locator), \
+            f'{object} arrow not received, but should be'
+        assert self.is_not_element_present(invisible_locator), \
+            f'Number of {object} is not visible, but should be'
+        self.browser.find_element(*arrow_locator).click()
+        self.browser.find_element(*delete_locator).click()
+        self.browser.find_element(*first_item_locator).click()
+        assert self.is_not_element_present(delete_locator, 10), \
+            f'{object} group delete button received, but should not be'
+        assert self.is_not_element_present(restore_locator), \
+            f'{object} group restore button received, but should not be'
+        assert self.is_not_element_present(arrow_locator), \
+            f'{object} arrow received, but should not be'
+        assert self.is_element_present(invisible_locator), \
+            f'Number of {object} is visible, but should not be'
+
     def add_areas(self, areas, ppk):
         logger.info(f'Creating {areas} areas on PPK#{ppk}...')
+        self.check_group_buttons('Areas', SystemObjectsLocators.DELETE_AREAS(ppk), 
+            SystemObjectsLocators.RESTORE_AREAS(ppk), SystemObjectsLocators.AREA_ARROW(ppk),
+            SystemObjectsLocators.INVISIBILITY_AREAS_NUM(ppk), SystemObjectsLocators.AREA_ADD_ICON(ppk),
+            SystemObjectsLocators.AREA_ITEMS(1, ppk))
         for _ in range(areas):  # Создать Зоны пожаротушения
             self.browser.find_element(*SystemObjectsLocators.AREA_ADD_ICON(ppk)).click()
 
     def add_inputlink(self, inlinks, ppk):
         logger.info(f'Creating {inlinks} inputlinks on PPK#{ppk}...')
+        self.check_group_buttons('Inputlink', SystemObjectsLocators.DELETE_INPUTLINKS(ppk), 
+            SystemObjectsLocators.RESTORE_INPUTLINKS(ppk), SystemObjectsLocators.INPUTLINK_ARROW(ppk),
+            SystemObjectsLocators.INVISIBILITY_INPUTLINKS_NUM(ppk), 
+            SystemObjectsLocators.INPUTLINK_ADD_ICON(ppk), SystemObjectsLocators.INPUTLINK_ITEMS(1, ppk))
         if inlinks > 0:
             for i in range(inlinks):  # Создать ТС входы
                 self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ADD_ICON(ppk)).click()
-            self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ARROW(ppk)).click()  # Список входов
             for i in range(inlinks):  # Сделать ТС входы каждого типа
                 self.browser.find_element(*SystemObjectsLocators.INPUTLINK_ITEMS(i + 1, ppk)).click()
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
@@ -181,10 +178,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def add_ouputlink(self, outlinks, ppk):
         logger.info(f'Creating {outlinks} outputlinks on PPK#{ppk}...')
+        self.check_group_buttons('Outputlink', SystemObjectsLocators.DELETE_OUTPUTLINKS(ppk), 
+            SystemObjectsLocators.RESTORE_OUTPUTLINKS(ppk), SystemObjectsLocators.OUTPUTLINK_ARROW(ppk),
+            SystemObjectsLocators.INVISIBILITY_OUTPUTLINKS_NUM(ppk), 
+            SystemObjectsLocators.OUTPUTLINK_ADD_ICON(ppk), SystemObjectsLocators.OUTPUTLINK_ITEMS(1, ppk))
         if outlinks > 0:
             for i in range(outlinks):  # Создать ТС выходы
                 self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ADD_ICON(ppk)).click()
-            self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ARROW(ppk)).click()  # Список выходов
             for i in range(outlinks):  # Сделать ТС выходы каждого типа
                 self.browser.find_element(*SystemObjectsLocators.OUTPUTLINK_ITEMS(i + 1, ppk)).click()
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
@@ -195,10 +195,13 @@ class MainPanel(Page):  # Класс для тестирования по тес
     
     def add_BIS_M(self, BIS_Ms, ppk):
         logger.info(f'Creating {BIS_Ms} BIS M on PPK#{ppk}...')
+        self.check_group_buttons('RS-485', SystemObjectsLocators.DELETE_RS_485(ppk), 
+            SystemObjectsLocators.RESTORE_RS_485(ppk), SystemObjectsLocators.RS_485_ARROW(ppk),
+            SystemObjectsLocators.INVISIBILITY_RS_485_NUM(ppk), 
+            SystemObjectsLocators.RS_485_ADD_ICON(ppk), SystemObjectsLocators.RS_485_ITEMS(1, ppk))
         if BIS_Ms > 0:
             for i in range(BIS_Ms):  # Создать БИС-Мы
                 self.browser.find_element(*SystemObjectsLocators.RS_485_ADD_ICON(ppk)).click()
-            self.browser.find_element(*SystemObjectsLocators.RS_485_ARROW(ppk)).click()  # Список БИС-М
             for i in range(BIS_Ms):  # Сделать БИС-Мы каждого типа
                 self.browser.find_element(*SystemObjectsLocators.RS_485_ITEMS(i + 1, ppk)).click()
                 self.browser.find_element(*SystemObjectsLocators.SELECT_TYPE_ICON).click()
@@ -209,10 +212,16 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
     def add_addressable_devices(self, AL, addr_devs, ppk):
         logger.info(f'Creating {addr_devs} addressable devices on addressable loop {AL} on PPK#{ppk}...')
+        self.check_group_buttons('Addressable device',
+            SystemObjectsLocators.DELETE_ADDRESSABLE_DEVICES(AL, ppk), 
+            SystemObjectsLocators.RESTORE_ADDRESSABLE_DEVICES(AL, ppk),
+            SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL, ppk),
+            SystemObjectsLocators.INVISIBILITY_ADDRESSABLE_DEVICES_NUM(AL, ppk), 
+            SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(AL, ppk),
+            SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, 1, ppk))
         if addr_devs > 0:
             for i in range(addr_devs):  # Создать АУ
                 self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ADD_ICON(AL, ppk)).click()
-            self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL, ppk)).click()
             for i in range(addr_devs):  # Сделать АУ каждого типа
                 self.browser.find_element(
                     *SystemObjectsLocators.ADDRESSABLE_DEVICES_ITEMS(AL, i + 1, ppk)).click()
@@ -223,7 +232,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             self.browser.find_element(*SystemObjectsLocators.ADDRESSABLE_DEVICES_ARROW(AL, ppk)).click()
 
 
-# Проверка полной выгрузки из ППК
+# Проверка полной выгрузки из ППК        
     def check_number_of_areas(self, areas, ppk):
         logger.info(f'Checking number of areas on PPK#{ppk} ...')
         count = self.browser.find_element(*SystemObjectsLocators.NUMBER_OF_AREAS(ppk)).text
@@ -1052,7 +1061,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
 
 # Проверка терминала 
     def should_be_object_creation_messages(self, areas, inlinks, outlinks, BIS_Ms, addr_devs, ppk_num):
-        logger.info(f'Checking object creation messages in terminal when unloading')
+        logger.info(f'Checking object creation messages in terminal when unloading...')
         for ppk in range(1, ppk_num + 1):
             assert self.is_element_visible(SystemObjectsLocators.PPK_R_FORM(ppk), 10), f'PPK#{ppk} not found'
             for num in range(1, areas + 1):  # Проверка сообщений создания Зон Пожаротушения
@@ -1084,7 +1093,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
                         f'"{type[num % 13 - 1]}" on loop {AL} or there is a spelling error'
                 
     def should_be_alternating_colors_in_terminal(self):
-        logger.info(f'Checking alternation of colors in dark mode terminal')
+        logger.info(f'Checking alternation of colors in dark mode terminal...')
         color1 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(1)).value_of_css_property('color')
         assert '158, 158, 158' in color1, 'Color of the first message in dark mode terminal ' \
             f'is not grey: "rgba(158, 158, 158, 1)", received color: {color1}'
@@ -1093,7 +1102,7 @@ class MainPanel(Page):  # Класс для тестирования по тес
             f'is not white: "rgba(250, 250, 250, 1)", received color: {color2}'
         self.close_terminal()
         self.browser.find_element(*MainPanelLocators.LIGHT_MODE_ICON).click()
-        logger.info(f'Checking alternation of colors in light mode terminal')
+        logger.info(f'Checking alternation of colors in light mode terminal...')
         self.open_terminal()
         color1 = self.browser.find_element(*MainPanelLocators.TERMINAL_ITEMS(1)).value_of_css_property('color')
         assert '158, 158, 158' in color1, 'Color of the first message in light mode terminal ' \

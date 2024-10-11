@@ -1,11 +1,14 @@
-from locators import (MainPanelLocators, SystemObjectsLocators)
+from locators import (MainPanelLocators, SystemObjectsLocators, ConfigurationLocators)
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 import psutil
 from loguru import logger
+from time import time
 from time import sleep
 
 
@@ -67,6 +70,48 @@ class Page():
         self.browser.get(self.url)
         self.browser.maximize_window()  # Разворот окна на весь экран
     
+    def check_record(self, ppk, module='', timeout=30):
+        start_time = time()
+        assert self.is_element_present(SystemObjectsLocators.RECORD_START(ppk, module)), \
+            f'Recording for {f'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} has not started'
+        assert self.is_element_visible(SystemObjectsLocators.RECORD_FINISH, max(timeout, 10)), \
+            f'Recording for {'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} has not finished, ' \
+            f'time spent: {time() - start_time:.2f}'
+        logger.success(f'Record to {'PPK#{ppk}' if module == '' else f'PPK#{ppk} {module}'} was successful, ' \
+                    f'time spent: {time() - start_time:.2f}')
+    
+    def unload_settings(self):
+        logger.info(f'Checking unloading settings from all ppk...')
+        sleep(1)
+        button = self.browser.find_element(*MainPanelLocators.FROM_PPK_BUTTON)
+        button.click()
+        if '250, 250, 250' in button.value_of_css_property('color'):  # Темная тема
+            sleep(1)
+            assert self.is_element_present(MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_DARK), \
+            'Button "ИЗ ППК" does not blink'
+        else:
+            assert self.is_element_present(MainPanelLocators.FROM_PPK_BUTTON_IS_BLINKING_LIGHT), \
+            'Button "ИЗ ППК" does not blink'
+
+    def check_unload(self, ppk_num, m1_wait=30, m2_wait=30, m3_wait=30):
+        start_time = time()
+        assert self.is_element_present(SystemObjectsLocators.UNLOAD_START), \
+            f'Unload for all ppkr has not started, time spent: {time() - start_time:.2f}'
+        for ppk in range(1, ppk_num + 1):
+            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
+                ppk, '1(Области)'), max(m3_wait, 30) * (1 + (ppk > 1))), \
+                f'Unload for PPK#{ppk} module#1 has not started, time spent: {time() - start_time:.2f}'
+            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
+                ppk, '2(Выходы)'), max(m1_wait, 30) * (1 + (ppk > 1))), \
+                f'Unload for PPK#{ppk} module#2 has not started, time spent: {time() - start_time:.2f}'
+            assert self.is_element_visible(SystemObjectsLocators.UNLOAD_START_MODULE(
+                ppk, '3(Адресные шлейфы)'), max(m2_wait, 30) * (1 + (ppk > 1))), \
+                f'Unload for PPK#{ppk} module#3 has not started, time spent: {time() - start_time:.2f}'
+        assert self.is_element_visible(SystemObjectsLocators.UNLOAD_FINISH, 
+            max(m3_wait, 30) * (1 + (ppk_num > 1))), \
+            f'Unload for all ppkr has not finished, time spent: {time() - start_time:.2f}'
+        logger.success(f'Unload from all ppk was successful, time spent: {time() - start_time:.2f}')
+
     def refresh_page(self):
         assert self.is_element_clickable(MainPanelLocators.LOGO), 'Logo is not clickable'
         self.browser.find_element(*MainPanelLocators.LOGO).click()  # Нажимаем на лого
@@ -137,28 +182,108 @@ class Page():
         сворачивание и разворачивание вкладки при нажатии на стрелку и при двойном нажатии вкладки 
         (при разворачивании проверяется наличие объекта sub_locator)
         '''
-        self.presence_and_spelling(locator, name, 'tab')
-
         self.browser.find_element(*arrow_locator).click()
+        sleep(0.2)
+        assert self.is_element_visible(sub_locator), \
+            f'{name} tab did not open after clicking arrow'
+        self.browser.find_element(*arrow_locator).click()
+        sleep(0.2)
         assert self.is_not_element_present(sub_locator), \
-            'System tab did not collapse after clicking arrow'
-        sleep(0.5)
-        self.browser.find_element(*arrow_locator).click()
-        assert self.is_element_present(sub_locator), \
-            'System tab did not open after clicking arrow'
+            f'{name} tab did not collapse after clicking arrow'
 
-        for _ in range(2):
-            sleep(0.2)
-            element = self.browser.find_element(*locator)
-            self.browser.execute_script(
-                'arguments[0].dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));', element)
+        element = self.browser.find_element(*locator)
+        self.browser.execute_script(
+            'arguments[0].dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));', element)
+        sleep(0.2)
+        assert self.is_element_visible(sub_locator), \
+            f'{name} tab did not open after double click'
+        self.browser.execute_script(
+            'arguments[0].dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));', element)
+        sleep(0.2)
         assert self.is_not_element_present(sub_locator), \
-            'System tab did not collapse after double click'
-        sleep(0.5)
-        for _ in range(2):
-            element = self.browser.find_element(*locator)
-            self.browser.execute_script(
-                'arguments[0].dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));', element)
-        self.browser.find_element(*arrow_locator).click()
-        assert self.is_element_present(sub_locator), \
-            'System tab did not open after double click'
+            f'{name} tab did not collapse after double click'
+        
+    def check_positioning(self, locator, path, modules='1111'):
+        '''Проверяет вкладку на выделение красным при позиционированиии черным без него, 
+        наличие указанных панелей настроек справа.
+        '''
+        self.browser.find_element(*locator).click()
+        sleep(0.2)
+        color = self.browser.find_element(*locator).value_of_css_property('background-color')
+        assert '255, 49, 80' in color, f'Tab background color is not red: ' \
+            f'"rgba(255, 49, 80, 0.24)", received color: {color}'
+
+        assert len(self.browser.find_elements(*ConfigurationLocators.PATH)) == 2, \
+            'Path to the tab is not present'
+        if path != '#1 ППК-Р':  # Для ППК другая схема
+            text = self.browser.find_elements(*ConfigurationLocators.PATH)[1].text
+            assert text == path, f'Path to the tab is not match, expected: {path}, received: {text}' 
+
+        if modules[0] == '1':
+            assert self.is_element_present(ConfigurationLocators.CONFIGURATION_PANEL), \
+                'Configuration panel is not present, but should be'
+        else:
+            assert self.is_not_element_present(ConfigurationLocators.CONFIGURATION_PANEL), \
+                'Configuration panel present, but should not be'
+        if modules[1] == '1':
+            assert self.is_element_present(ConfigurationLocators.STATUS_PANEL), \
+                'Status panel is not present, but should be'
+        else:
+            assert self.is_not_element_present(ConfigurationLocators.STATUS_PANEL), \
+                'Status panel present, but should not be'
+        if modules[2] == '1':
+            assert self.is_element_present(ConfigurationLocators.COMMAND_PANEL), \
+                'Command panel is not present, but should be'
+        else:
+            assert self.is_not_element_present(ConfigurationLocators.COMMAND_PANEL), \
+                'Command panel present, but should not be'
+        if modules[3] == '1':
+            assert self.is_element_present(ConfigurationLocators.INFORMATION_PANEL), \
+                'Information panel is not present, but should be'
+        else:
+            assert self.is_not_element_present(ConfigurationLocators.INFORMATION_PANEL), \
+                'Information panel present, but should not be'
+        
+        self.refresh_page()
+        color = self.browser.find_element(*locator).value_of_css_property('background-color')
+        assert '33, 33, 33' in color, f'Tab background color is not black: ' \
+            f'"rgba(33, 33, 33, 1)", received color: {color}'
+
+    def check_delete_button(self):  # Перед выполнением не должно быть меток на удаение
+        assert self.is_element_present(ConfigurationLocators.DELETE_BUTTON), 'Delete button is not present'
+        self.browser.find_element(*ConfigurationLocators.DELETE_BUTTON).click()
+        assert self.is_element_present(ConfigurationLocators.DELETE_MARK), 'Tab was not marked for deletion'
+        assert self.is_element_present(ConfigurationLocators.RESTORE_BUTTON), 'Restore button is not present'
+        self.browser.find_element(*ConfigurationLocators.RESTORE_BUTTON).click()
+        assert self.is_not_element_present(ConfigurationLocators.DELETE_MARK), 'Tab was not unmarked for deletion'
+        assert self.is_element_present(ConfigurationLocators.DELETE_BUTTON), 'Delete button is not present'
+
+    def check_change_address_field(self, max_num):  # Проверка границ и стрелок в поле ввода
+        assert self.is_element_present(ConfigurationLocators.CHANGE_ADDRESS_BUTTON), \
+            'Change address button is not present'
+        self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_BUTTON).click()
+        assert self.is_element_present(ConfigurationLocators.CHANGE_ADDRESS_INPUT), \
+            'Change address input field is not present'
+        actions = ActionChains(self.browser)
+        input_field = self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_INPUT)
+        sleep(0.3)
+        actions.move_to_element_with_offset(input_field, 100, -1).click().perform()  # +1
+        actions.move_to_element_with_offset(input_field, 100, 1).click().perform()  # -1
+        actions.move_to_element_with_offset(input_field, 100, 1).click().perform()  # -1
+        value = input_field.get_attribute('value')
+        assert value == '1', \
+            f'Value in change address input field does not match, expected "1", received: {value}'
+        input_field.send_keys(Keys.BACKSPACE, max_num + 1, max_num)
+        actions.move_to_element_with_offset(input_field, 100, 1).click().perform()  # -1
+        actions.move_to_element_with_offset(input_field, 100, -1).click().perform()  # +1
+        actions.move_to_element_with_offset(input_field, 100, -1).click().perform()  # +1
+        value = input_field.get_attribute('value')
+        assert value == str(max_num), \
+            f'Value in change address input field does not match, expected {max_num}, received: {value}'
+        self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_OK).click()
+    
+    def change_address(self, num):
+        self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_BUTTON).click()
+        input_field = self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_INPUT)
+        input_field.send_keys(Keys.BACKSPACE, Keys.BACKSPACE, num)
+        self.browser.find_element(*ConfigurationLocators.CHANGE_ADDRESS_OK).click()
